@@ -1,0 +1,51 @@
+{
+    "name": "EspNowMqttPeer2Peer",
+    "version": "1.0.0",
+    "keywords": "espnow, mqtt, esp32, esp8266, iot, peer-to-peer, communication, router, master, peer, slave",
+    "description": "Library for peer-to-peer communication between ESP devices using ESP-NOW and MQTT communication. Comatibility: Router (ESP32) e Peer (ESP32/ESP8266).",
+    "authors": {
+      "name": "Marcelo Pimentel",
+      "email": "marcelo-pimentel@hotmail.com",
+      "url": "https://github.com/marcelopi"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/marcelopi/EspNowMqttPeer2Peer.git"
+    },
+    "export": {
+      "include": ["src/*", "examples/*"]
+    },
+    "frameworks": ["arduino"],
+    "platforms": ["espressif32", "espressif8266"],
+    "dependencies": [
+      {
+        "name": "ArduinoOTA"
+      },
+      {
+        "name": "arduino-libraries/NTPClient",
+        "version": "^3.2.1"
+      },
+  
+       {
+        "name": "me-no-dev/AsyncTCP",
+        "version": "^3.3.2",
+        "platforms": ["espressif32"]
+      },
+      {
+        "name": "heman/AsyncMqttClient-esphome",
+        "version": "^2.1.0",
+        "platforms": ["espressif32"]
+      },
+      
+      {
+        "name": "ottowinter/AsyncMqttClient-esphome",
+        "version": "^0.8.6",
+        "platforms": ["espressif32", "espressif8266"]
+      },
+      {
+        "name": "PaulStoffregen/Time",
+        "version": "https://github.com/PaulStoffregen/Time",
+        "platforms": ["espressif32", "espressif8266"]
+      }
+    ]
+  }
