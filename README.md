@@ -1,11 +1,17 @@
 # MqttEspnowPeer2Peer  
 **Hybrid MQTT/ESP-NOW Protocol for Distributed IoT**  
+# Inspiration and Core Concept
+
+This system was designed to unify MQTT and ESP-NOW paradigms, creating a transparent communication layer where:
+ESP-NOW acts as "Wireless MQTT": Messages are routed using topic patterns (source/destination/action), simulating MQTT's publish/subscribe model without requiring a central broker.
+Full Abstraction: Developers interact with a single API while the library automatically chooses between:
+ESP-NOW: For local peer-to-peer communication (ESP32/ESP8266)
+MQTT: For cloud/remote connectivity (ESP32 Router only)
 
 [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-30363D?style=for-the-badge&logo=GitHub-Sponsors&logoColor=white)](https://github.com/sponsors/marcelopi)
 
 [![PDF Documentation](https://img.shields.io/badge/Download-Full_Documentation-blue)](docs/ESPNowMqttPeer2Peer.pdf)
 
----
 
 ## 🌟 Core Features
 
