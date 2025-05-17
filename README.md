@@ -10,7 +10,7 @@ MQTT: For cloud/remote connectivity (ESP32 Router only)
 
 [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-30363D?style=for-the-badge&logo=GitHub-Sponsors&logoColor=white)](https://github.com/sponsors/marcelopi)
 
-[![PDF Documentation](https://img.shields.io/badge/Download-Full_Documentation-blue)](docs/ESPNowMqttPeer2Peer.pdf)
+[![PDF Documentation](https://img.shields.io/badge/Download-Full_Documentation-blue)](docs/EspnowMqttPeer2Peer.pdf)
 
 
 ## 🌟 Core Features
