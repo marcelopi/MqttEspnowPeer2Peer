@@ -158,7 +158,21 @@ void EspNowPeer::publishENow(const String &source, const String &destination, co
 void EspNowPeer::onReceive(const uint8_t* mac, const uint8_t* data, int len) {
     if (!instance) return;
 
-    String payload = String((const char*)data, len);
+    String payload;
+
+    #if defined(ESP32)
+        payload = String((const char*)data, len);  // Mantém original para ESP32
+    #elif defined(ESP8266)
+        // Alternativa para ESP8266
+        char* buffer = new char[len + 1];
+        memcpy(buffer, data, len);
+        buffer[len] = '\0';
+        payload = String(buffer);
+        delete[] buffer;
+    #endif
+
+
+
     // Exemplo de formato: "src|dest|action|mensagem"
     int idx1 = payload.indexOf('>');
     int idx2 = payload.indexOf('/', idx1 + 1);

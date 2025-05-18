@@ -63,24 +63,21 @@ void wifiConnManager::getNetMode(int defaultNetMode){
 #elif defined(ESP8266)
     EEPROM.begin(EEPROM_SIZE);
     uint8_t val = EEPROM.read(EEPROM_ADDR_UPDATE_MODE);
-    if (val == EEPROM_DEFAULT_VALUE)
-    {
+    if (val == EEPROM_DEFAULT_VALUE) {
         this->netMode = defaultNetMode;
         EEPROM.write(EEPROM_ADDR_UPDATE_MODE, netMode);
         EEPROM.commit();
         Serial.println("⚠️ EEPROM sem valor. Setado modo padrão: ESPNOW.");
-    }
-    else
-    {
+    } else {
         this->netMode = val;
         const char* modeStr = "UNDEFINED";
         switch (this->netMode) {
-        case 0: modeStr = "ESPNOW"; break;
-        case 1: modeStr = "WIFI"; break;
-        case 2: modeStr = "HYBRID"; break;
+            case 0: modeStr = "ESPNOW"; break;
+            case 1: modeStr = "WIFI"; break;
+            case 2: modeStr = "HYBRID"; break;
         }
         Serial.printf("\n📥 Modo de Network: %s\n", modeStr);
-        Serial.printf("📥 Modo carregado da EEPROM: %s\n", netMode ? modeStr);
+        Serial.printf("📥 Modo carregado da EEPROM: %s\n", modeStr); // Corrigido aqui
     }
 #endif
 }
