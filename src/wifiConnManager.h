@@ -2,7 +2,12 @@
 #ifdef ESP32
 #include <WiFi.h>
 #include <esp_wifi.h>
-#include <esp_now.h>
+#if defined(ARDUINO_ARCH_ESP32) || defined(ARDUINO_ARCH_ESP8266)
+  #include <Arduino.h>
+  #include "esp_now.h"
+#else
+  #error "This library only supports ESP32/ESP8266"
+#endif
 #include <Preferences.h>
 #elif defined(ESP8266)
 #include <ESP8266WiFi.h>

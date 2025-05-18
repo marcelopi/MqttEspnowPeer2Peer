@@ -22,13 +22,11 @@
       ]
   },
   "frameworks": "arduino",
-  "platforms": [
-      "espressif32",
-      "espressif8266"
-  ],
+  "platforms": ["espressif32", "espressif8266"],
   "dependencies": [
       {
-          "name": "ArduinoOTA"
+          "name": "ArduinoOTA",
+          "version": "*"
       },
       {
           "name": "arduino-libraries/NTPClient",

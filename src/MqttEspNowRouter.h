@@ -1,8 +1,15 @@
 #ifndef MQTT_ESPNOW_ROUTER_H
 #define MQTT_ESPNOW_ROUTER_H
+#pragma once
 
-#include <Arduino.h>
-#include <esp_now.h>
+#if defined(ARDUINO_ARCH_ESP32) || defined(ARDUINO_ARCH_ESP8266)
+  #include <Arduino.h>
+  #include "esp_now.h"
+#else
+  #error "This library only supports ESP32/ESP8266"
+#endif
+
+
 #include <esp_wifi.h> 
 #ifdef ESP32
 #include <WiFi.h>
