@@ -51,11 +51,6 @@
       {
         "name": "heman/AsyncMqttClient-esphome",
         "version": "^2.1.0",
-        "platforms": "espressif32"
-      },
-      {
-        "name": "ottowinter/AsyncMqttClient-esphome",
-        "version": "^0.8.6",
         "platforms": ["espressif32", "espressif8266"]
       },
       {
