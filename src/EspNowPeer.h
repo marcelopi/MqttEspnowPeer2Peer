@@ -1,9 +1,7 @@
 #pragma once
 #include <vector>
-
 #ifdef ESP32
 #include <WiFi.h>
-#pragma once
 
 #if defined(ARDUINO_ARCH_ESP32) || defined(ARDUINO_ARCH_ESP8266)
   #include <Arduino.h>
