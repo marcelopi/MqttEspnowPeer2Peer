@@ -45,8 +45,8 @@
         "version": "^3.2.1"
       },
       {
-        "name": "me-no-dev/AsyncTCP",
-        "version": "^3.3.2",
+        "name": "esphome/AsyncTCP-esphome",
+        "version": "^2.1.3",
         "platforms": "espressif32"
       },
       {
