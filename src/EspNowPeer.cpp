@@ -75,8 +75,7 @@ void EspNowPeer::addPeer(const uint8_t *peerMac) {
     esp_now_set_self_role(ESP_NOW_ROLE_COMBO);
 
     // Verificar se o peer já está adicionado
-    bool exists = esp_now_is_peer_exist((uint8_t*)peerMac);
-    if (exists) {
+    if (esp_now_is_peer_exist((uint8_t*)peerMac)) {
         Serial.println("ℹ️ Peer já está registrado (ESP8266).");
     } else {
         bool success = esp_now_add_peer((uint8_t*)peerMac, ESP_NOW_ROLE_COMBO, 6, nullptr, 0);
@@ -111,16 +110,16 @@ void EspNowPeer::publishENow(const String &source, const String &destination, co
     String fullMsg = source + ">" + destination + "/" + action + "|" + message;
     const uint8_t* msgData = (uint8_t *)fullMsg.c_str();
 #if defined(ESP8266)
-    int msgLen = fullMsg.length(); // Corrigido para usar length() em vez de sizeof
+    int msgLen = sizeof(fullMsg); // ESP8266 exige uint8_t
 #else
-    size_t msgLen = fullMsg.length();
+    size_t msgLen = fullMsg.length();  // ESP32 aceita size_t
 #endif
 
     if (destination == "ALL") {
         for (const auto& peer : childrenPeers) {
             Serial.printf("🔁 Encaminhando para '%s'\n", peer.name.c_str());
 #if defined(ESP8266)
-    bool result = esp_now_send(const_cast<uint8_t*>(peer.mac), (uint8_t *)msgData, msgLen);
+    bool result = esp_now_send(const_cast<uint8_t*>(peer.mac), (uint8_t *) &msgData, msgLen);
     if (!result) {
         Serial.println("❌ Falha no envio ESP-NOW (ESP8266).");
     }
