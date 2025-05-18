@@ -6,48 +6,21 @@
 
 class NtpManager {
 public:
-    static void setEpochTime(unsigned long epoch) {
-        setTime(epoch);
-        _lastSync = millis();
-        _epoch = epoch;
-        _ntpActive = true;
-    }
+    NtpManager();
 
-    // Retorna no formato dd/mm/aaaa hh:mi:ss
-    static String getDateTimeString() {
-        if (!_ntpActive) return "NTP não sincronizado";
-        
-        time_t currentTime = _epoch + ((millis() - _lastSync) / 1000);
-        return _formatTime(currentTime);
-    }
+    void setEpochTime(unsigned long epoch);
+    String getDateTimeString() const;
+    void printDateTime() const;
+    bool isTimeSet() const;
 
-    // Imprime diretamente no Serial
-    static void printDateTime() {
-        if (!_ntpActive) {
-            Serial.println("NTP não sincronizado");
-            return;
-        }
-        Serial.println(getDateTimeString());
-    }
-
-    static bool isTimeSet() { return _ntpActive; }
+    static NtpManager* instance; // Ponteiro para a instância ativa
 
 private:
-    static unsigned long _epoch;
-    static unsigned long _lastSync;
-    static bool _ntpActive;
+    unsigned long epoch;
+    unsigned long lastSync;
+    bool ntpActive;
 
-    static String _formatTime(time_t t) {
-        char buffer[20];
-        snprintf(buffer, sizeof(buffer), "%02d/%02d/%04d %02d:%02d:%02d",
-                 day(t), month(t), year(t),
-                 hour(t), minute(t), second(t));
-        return String(buffer);
-    }
+    String formatTime(time_t t) const;
 };
-
-unsigned long NtpManager::_epoch = 0;
-unsigned long NtpManager::_lastSync = 0;
-bool NtpManager::_ntpActive = false;
 
 #endif
