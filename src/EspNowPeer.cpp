@@ -161,7 +161,7 @@ void EspNowPeer::onReceive(const uint8_t* mac, const uint8_t* data, int len) {
     String payload;
 
     #if defined(ESP32)
-        payload = String((const char*)data, len);  // Mantém original para ESP32
+        payload = String((const char*)data, len);  
     #elif defined(ESP8266)
         // Alternativa para ESP8266
         char* buffer = new char[len + 1];
@@ -180,6 +180,8 @@ void EspNowPeer::onReceive(const uint8_t* mac, const uint8_t* data, int len) {
 
     if (idx1 < 0 || idx2 < 0 || idx3 < 0) {
         Serial.println("❌ Formato inválido da mensagem ESP-NOW");
+        Serial.print("Payload recebido:");
+        Serial.println(payload);
         return;
     }
 
