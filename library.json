@@ -1,5 +1,5 @@
 {
-  "name": "EspNowMqttPeer2Peer",
+  "name": "MqttEspnowPeer2Peer",
   "version": "1.0.0",
   "keywords": "espnow, mqtt, esp32, esp8266, iot, peer-to-peer, communication, router, master, peer, slave",
   "description": "Library for peer-to-peer communication between ESP devices using ESP-NOW and MQTT. Router (ESP32 Only) | Peer (ESP32/ESP8266). Support development: https://github.com/sponsors/marcelopi",
@@ -11,7 +11,7 @@
   },
   "repository": {
       "type": "git",
-      "url": "https://github.com/marcelopi/EspNowMqttPeer2Peer.git"
+      "url": "https://github.com/marcelopi/MqttEspNowPeer2Peer.git"
   },
   "sponsor": "https://github.com/sponsors/marcelopi",
   "export": {
@@ -53,8 +53,8 @@
           ]
       },
       {
-          "name": "PaulStoffregen/Time",
-          "version": "https://github.com/PaulStoffregen/Time",
+          "name": "paulstoffregen/Time1",
+          "version": "^1.6.1",
           "platforms": [
               "espressif32",
               "espressif8266"
