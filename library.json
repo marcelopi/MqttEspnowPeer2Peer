@@ -25,8 +25,9 @@
           "+<src/EspNowPeer.cpp>",
           "+<src/wifiConnManager.cpp>",
           "+<src/NtpManager.cpp>",
+          "+<src/NtpHelper.cpp>",
           {
-              "exclude": ["src/MqttEspNowRouter.cpp", "src/NtpHelper.cpp"],
+              "exclude": "src/MqttEspNowRouter.cpp",
               "platforms": "espressif8266"
           }
       ]
@@ -41,17 +42,22 @@
           "platforms": "espressif32"
       },
       {
+          "include": "src/wifiConnManager.h",
+          "platforms": ["espressif32", "espressif8266"]
+      },
+      {
+        "include": "src/NtpManager.h",
+        "platforms": ["espressif32", "espressif8266"]
+      },
+      {
           "include": "src/NtpHelper.h",
           "platforms": "espressif32"
-      },
-      "src/wifiConnManager.h",
-      "src/NtpManager.h"
+      }
   ],
   "dependencies": [
       {
           "name": "ArduinoOTA",
-          "version": "*",
-          "platforms": ["espressif32", "espressif8266"]
+          "version": "*"
       },
       {
           "name": "arduino-libraries/NTPClient",
