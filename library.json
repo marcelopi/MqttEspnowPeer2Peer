@@ -1,66 +1,87 @@
 {
-    "name": "MqttEspnowPeer2Peer",
-    "version": "1.0.5",
-    "keywords": "espnow, mqtt, esp32, esp8266, iot, peer-to-peer, communication, router, master, peer, slave",
-    "description": "Library for peer-to-peer communication between ESP devices using ESP-NOW and MQTT. Router (ESP32 Only) | Peer (ESP32/ESP8266). Support development: https://github.com/sponsors/marcelopi",
-    "authors": {
+  "name": "MqttEspnowPeer2Peer",
+  "version": "1.0.6",
+  "keywords": "espnow, mqtt, esp32, esp8266, iot, peer-to-peer, communication, router, master, peer, slave",
+  "description": "Library for peer-to-peer communication between ESP devices using ESP-NOW and MQTT. Router (ESP32 Only) | Peer (ESP32/ESP8266). Support development: https://github.com/sponsors/marcelopi",
+  "authors": {
       "name": "Marcelo Pimentel",
       "email": "marcelo-pimentel@hotmail.com",
       "url": "https://github.com/marcelopi",
       "maintainer": true
-    },
-    "repository": {
+  },
+  "repository": {
       "type": "git",
       "url": "https://github.com/marcelopi/MqttEspNowPeer2Peer.git"
-    },
-    "sponsor": "https://github.com/sponsors/marcelopi",
-    "export": {
-      "include": [
-        "src/*",
-        "examples/*",
-        "docs/*"
+  },
+  "sponsor": "https://github.com/sponsors/marcelopi",
+  "export": {
+      "include": ["src/*", "examples/*", "docs/*"]
+  },
+  "frameworks": ["arduino"],
+  "platforms": ["espressif32", "espressif8266"],
+  "build": {
+      "srcFilter": [
+          "+<*.cpp>",
+          "+<src/EspNowPeer.cpp>",
+          "+<src/wifiConnManager.cpp>",
+          "+<src/NtpManager.cpp>",
+          {
+              "exclude": ["src/MqttEspNowRouter.cpp", "src/NtpHelper.cpp"],
+              "platforms": "espressif8266"
+          }
       ]
-    },
-    "frameworks": ["arduino"],
-    "platforms": ["espressif32", "espressif8266"],
-    "build": {
-      "srcFilter": ["+<*.cpp>", "+<src/>"]
-    },
-    "headers": [
-      "src/MqttEspNowRouter.h",
-      "src/EspNowPeer.h",
+  },
+  "headers": [
+      {
+          "include": "src/EspNowPeer.h",
+          "platforms": ["espressif32", "espressif8266"]
+      },
+      {
+          "include": "src/MqttEspNowRouter.h",
+          "platforms": "espressif32"
+      },
+      {
+          "include": "src/NtpHelper.h",
+          "platforms": "espressif32"
+      },
       "src/wifiConnManager.h",
-      "src/NtpHelper.h",
-      "src/NTPClient.h"
-    ],
-    "dependencies": [
+      "src/NtpManager.h"
+  ],
+  "dependencies": [
       {
-        "name": "ArduinoOTA",
-        "version": "*"
+          "name": "ArduinoOTA",
+          "version": "*",
+          "platforms": ["espressif32", "espressif8266"]
       },
       {
-        "name": "arduino-libraries/NTPClient",
-        "version": "^3.2.1"
+          "name": "arduino-libraries/NTPClient",
+          "version": "^3.2.1",
+          "platforms": "espressif32"
       },
       {
-        "name": "esphome/AsyncTCP-esphome",
-        "version": "^2.1.3",
-        "platforms": "espressif32"
+          "name": "esphome/AsyncTCP-esphome",
+          "version": "^2.1.3",
+          "platforms": "espressif32"
       },
       {
-        "name": "heman/AsyncMqttClient-esphome",
-        "version": "^2.1.0",
-        "platforms": ["espressif32", "espressif8266"]
+          "name": "heman/AsyncMqttClient-esphome",
+          "version": "^2.1.0",
+          "platforms": ["espressif32", "espressif8266"]
       },
       {
-        "name": "paulstoffregen/Time1",
-        "version": "^1.6.1",
-        "platforms": ["espressif32", "espressif8266"]
+          "name": "paulstoffregen/Time1",
+          "version": "^1.6.1",
+          "platforms": ["espressif32", "espressif8266"]
       }
-    ],
-    "examples": [
-      "examples/Peer/*",
-      "examples/Router/*"
-    ]
-  }
-  
+  ],
+  "examples": [
+      {
+          "path": "examples/Peer/*",
+          "platforms": ["espressif32", "espressif8266"]
+      },
+      {
+          "path": "examples/Router/*",
+          "platforms": "espressif32"
+      }
+  ]
+}
