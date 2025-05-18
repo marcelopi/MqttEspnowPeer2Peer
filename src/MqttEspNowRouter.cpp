@@ -1,3 +1,4 @@
+#ifdef ESP32
 #include "MqttEspNowRouter.h"
 #define CHANNEL_AUTO 255
 MqttEspNowRouter *MqttEspNowRouter::instance = nullptr;
@@ -33,32 +34,24 @@ void MqttEspNowRouter::begin(uint8_t wifiChannel, uint8_t espnowChannel, const c
 }
 
 void MqttEspNowRouter::addPeer(const uint8_t *peerMac){
-#if defined(ESP8266)
-    // ESP8266 não tem como verificar existência: assume sempre novo
-    Serial.println("⚠️ ESP8266: adicionando peer sem verificação.");
-#else
-    if (esp_now_is_peer_exist(peerMac)) {
-        Serial.println("Peer já existente.");
-        return;
-    }
-#endif
+    if (!esp_now_is_peer_exist(peerMac)) {
+        esp_now_peer_info_t peer = {};
+        memcpy(peer.peer_addr, peerMac, 6);
+        peer.channel = espnowChannel;
+        peer.encrypt = false;
 
-    esp_now_peer_info_t peer = {};
-    memcpy(peer.peer_addr, peerMac, 6);
-    peer.channel = espnowChannel;
-    peer.encrypt = false;
-
-    esp_err_t result = esp_now_add_peer(&peer);
-    if (result != ESP_OK) {
-        Serial.print("Falha ao adicionar peer em addPeer: ");
-        Serial.println(result);
-        return;
+        esp_err_t result = esp_now_add_peer(&peer);
+        if (result != ESP_OK) {
+            Serial.print("Falha ao adicionar peer em addPeer: ");
+            Serial.println(result);
+            return; // Evita reinício desnecessário
+        } else {
+            Serial.println("✅ Peer adicionado com sucesso.");
+        }
     } else {
-        Serial.println("✅ Peer adicionado com sucesso.");
+        Serial.println("Peer já existente.");
     }
 }
-
-
 
 void MqttEspNowRouter::configureESPNOW() {
     esp_now_register_send_cb([](const uint8_t *mac, esp_now_send_status_t status) {
@@ -353,14 +346,9 @@ void MqttEspNowRouter::handleMqttMessage(char *topic, char *payload, unsigned in
 bool MqttEspNowRouter::isLocalMac(const uint8_t *mac)
 {
   uint8_t routerMac[6];
-#ifdef ESP8266
-  WiFi.macAddress(routerMac); // Retorna uint8_t[6] direto
-#else
-  WiFi.macAddress(routerMac); // ESP32 - mesma função
-#endif
+  WiFi.macAddress(routerMac);
   return memcmp(mac, routerMac, 6) == 0 || memcmp(mac, "\0\0\0\0\0\0", 6) == 0;
 }
-
 
 const uint8_t* MqttEspNowRouter::getPeerMacByName(const String& name) const {
     String cleanedName = name;
@@ -436,5 +424,5 @@ void MqttEspNowRouter::handlePeerVerification(int timeoutMin)
         }
     }
 }
-
+#endif
 
