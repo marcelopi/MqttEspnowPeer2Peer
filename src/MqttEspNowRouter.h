@@ -1,15 +1,21 @@
 #ifndef MQTT_ESPNOW_ROUTER_H
 #define MQTT_ESPNOW_ROUTER_H
 #pragma once
+
 #include <Arduino.h>
+
 #ifdef ESP32
-#include <WiFi.h>
-#include "esp_now.h"
-#include <esp_wifi.h> 
+  #include <WiFi.h>
+  #include "esp_now.h"
+  #include <esp_wifi.h>
 #else
-#include <ESP8266WiFi.h>
-#include <espnow.h> 
+  #include <ESP8266WiFi.h>
+  extern "C" {
+    #include <espnow.h>
+    #include <user_interface.h>
+  }
 #endif
+
 #include <AsyncMqttClient.h>
 #include <vector>
 
@@ -64,6 +70,7 @@ public:
     void handleReconnectMqtt(int timeoutMin);
     void handlePeerVerification(int timeoutMin);
     void onWiFiConnected();
+
 private:
     uint32_t lastActivity;
     AsyncMqttClient mqttClient;
@@ -71,9 +78,9 @@ private:
     unsigned long lastReconnectAttempt = 0;
     uint8_t wifiChannel = -1;
     uint8_t espnowChannel = -1;
-    std::vector<DeviceInfo> childrenPeers; 
-    const char *mqttServerName= nullptr;
-    const char *routerName= nullptr;
+    std::vector<DeviceInfo> childrenPeers;
+    const char *mqttServerName = nullptr;
+    const char *routerName = nullptr;
     const uint8_t *routerMac = nullptr;
     const char *wfDeviceName = nullptr;
     const char *otaPwd = nullptr;
@@ -82,8 +89,10 @@ private:
     const char *mqttUser = nullptr;
     const char *mqttPwd = nullptr;
     unsigned int handleMqttTimeoutMin = 2;
+
     static void mqttCallback(char *topic, char *payload, AsyncMqttClientMessageProperties props, size_t len, size_t, size_t);
     static void espNowReceiveStatic(const uint8_t *mac, const uint8_t *data, int len);
+    
     void configureMQTT();
     void configureESPNOW();
     void addPeer(const uint8_t *peerMac);
@@ -92,6 +101,7 @@ private:
     const uint8_t* getPeerMacByName(const String& name) const;
     bool isLocalMac(const uint8_t *mac);
     void processPendingRoutes();
+
     struct PendingRoute
     {
         String source;
@@ -100,6 +110,7 @@ private:
         RouteType type; // ROUTE_MQTT, ROUTE_ESPNOW, ROUTE_BOTH
         uint8_t mac[6]; // Se não aplicável (MQTT puro), preencher com 0
     };
+
     std::vector<PendingRoute> pendingRoutes;
     Route routes[MAX_ROUTES];
     int routeCount = 0;
