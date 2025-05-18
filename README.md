@@ -1,3 +1,8 @@
+# ######################################
+# ######################################
+# UNDER CONSTRUCTION DONT USE !!
+# ######################################
+# ######################################
 # MqttEspnowPeer2Peer  
 **Hybrid MQTT/ESP-NOW Protocol for Distributed IoT**  
 # Inspiration and Core Concept

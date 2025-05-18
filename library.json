@@ -32,7 +32,8 @@
       "src/MqttEspNowRouter.h",
       "src/EspNowPeer.h",
       "src/wifiConnManager.h",
-      "src/NtpHelper.h"
+      "src/NtpHelper.h",
+      "src/NTPClient.h"
     ],
     "dependencies": [
       {
