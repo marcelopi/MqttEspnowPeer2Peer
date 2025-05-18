@@ -2,12 +2,13 @@
 #define MQTT_ESPNOW_ROUTER_H
 #pragma once
 #include <Arduino.h>
-#include "esp_now.h"
-#include <esp_wifi.h> 
 #ifdef ESP32
 #include <WiFi.h>
+#include "esp_now.h"
+#include <esp_wifi.h> 
 #else
 #include <ESP8266WiFi.h>
+#include <espnow.h> 
 #endif
 #include <AsyncMqttClient.h>
 #include <vector>
