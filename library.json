@@ -1,6 +1,6 @@
 {
   "name": "MqttEspnowPeer2Peer",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "keywords": "espnow, mqtt, esp32, esp8266, iot, peer-to-peer, communication, router, master, peer, slave",
   "description": "Library for peer-to-peer communication between ESP devices using ESP-NOW and MQTT. Router (ESP32 Only) | Peer (ESP32/ESP8266). Support development: https://github.com/sponsors/marcelopi",
   "authors": {
