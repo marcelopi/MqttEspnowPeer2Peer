@@ -120,7 +120,7 @@ void EspNowPeer::publishENow(const String &source, const String &destination, co
             // ========== Código ESP8266 ==========
             uint8_t* rawData = const_cast<uint8_t*>(msgData); // Remover const
             bool result = esp_now_send(
-                const_cast<uint8_t*>(peerMac), // MAC sem const
+                const_cast<uint8_t*>(peer.mac), // MAC sem const
                 rawData,                       // Dados sem const
                 msgLen                         // Tamanho
             );
@@ -223,7 +223,7 @@ void EspNowPeer::onReceive(const uint8_t* mac, const uint8_t* data, int len) {
     }
     // Subscreve PING para todos os filhos e envia PONG
     if (destination == instance->localName && action == "PING") {
-        instance->publishENow(destination, source, "PING", "PONG");
+        instance->publishENow(source, destination, "PING", "PONG");
         Serial.println("🔁 Respondido PING com PONG");
         return;
     }
