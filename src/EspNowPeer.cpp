@@ -226,13 +226,13 @@ void EspNowPeer::onReceive(const uint8_t* mac, const uint8_t* data, int len) {
         Serial.println("✅ Recebendo e tratando mensagem PONG...");
         String cleanedPeerName = instance->localName;
         cleanedPeerName.trim();
-        for (const auto& peer : childrenPeers) {
+        for (auto& peer : instance->childrenPeers) { 
             String peerName = peer.name;
             peerName.trim();
             if (strcmp(peerName.c_str(), cleanedPeerName.c_str()) == 0) {
                 unsigned long now = millis();
-                peer.lastPongReceived = now;
-                peer.online = true;
+                peer.lastPongReceived = now; 
+                peer.online = true; 
                 break;
             }
         }
