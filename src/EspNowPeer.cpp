@@ -215,7 +215,7 @@ void EspNowPeer::onReceive(const uint8_t* mac, const uint8_t* data, int len) {
             }
         }
     }
-    // Subscreve PING para todos os filhos e envia WQ   QW
+    // Subscreve PING para todos os filhos e envia
     if (destination == instance->localName && action == "PING") {
         instance->publishENow(destination, source, "PONG", "PONG");
         Serial.println("🔁 Respondido PING com PONG");
