@@ -83,9 +83,9 @@ void setup() {
             CHANNEL_AUTO, localIP, gateway, subnet, dns, HYBRID);
 }
 
-
+*********************************************************************************************
 ### Peer (ESP32 & ESP8266)
-cpp
+```cpp
 
 void loop() {
   router.handlePeerVerification(5);
