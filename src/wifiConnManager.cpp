@@ -133,6 +133,7 @@ void wifiConnManager::startWiFi(int NetMode)
     if (esp_now_init() != 0) {
         Serial.println("⚠️ Falha ao iniciar ESP-NOW no ESP8266");
     }else{
+        esp_now_set_self_role(ESP_NOW_ROLE_COMBO);
         notifyEspNowReady();
     }
 #endif
@@ -243,10 +244,9 @@ void wifiConnManager::configureWiFiChannel()
 #ifdef ESP32
     esp_wifi_set_channel(this->currentChannel, WIFI_SECOND_CHAN_NONE);
 #elif defined(ESP8266)
-    wifi_promiscuous_enable(1);
-    wifi_set_channel(6);
-    //wifi_set_channel(this->currentChannel);
-    wifi_promiscuous_enable(0);
+    WiFi.disconnect(); 
+    delay(100);
+    wifi_set_channel(this->currentChannel);
 #endif
 }
 
