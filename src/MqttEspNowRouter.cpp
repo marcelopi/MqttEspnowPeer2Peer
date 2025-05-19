@@ -255,7 +255,7 @@ void MqttEspNowRouter::handleEspNowMessage(const uint8_t *mac, const uint8_t *da
   }
 }
 
-void MqttEspNowRouter::subscribe(const String &source, const uint8_t *realSourceMac, const String &destination, const String &action, LocalHandler handler, RouteType type)
+void MqttEspNowRouter::subscribe(const String &source, const String &destination, const String &action, LocalHandler handler, RouteType type, const uint8_t *realSourceMac)
 {
   
   if (routeCount >= MAX_ROUTES)

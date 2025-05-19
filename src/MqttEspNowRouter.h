@@ -53,7 +53,7 @@ public:
     void begin(uint8_t wifiChannel, uint8_t espnowChannel, const char *routerName, const uint8_t *routerMac, const char *mqttServerName, const std::vector<DeviceInfo>& childrenPeers,
                             const char *mqttServer, uint16_t mqttPort, const char *mqttUser, const char *mqttPwd);
     
-    void subscribe(const String &source, const uint8_t *realSourceMac = nullptr, const String &destination, const String &action, LocalHandler handler, RouteType type);
+    void subscribe(const String &source, const String &destination, const String &action, LocalHandler handler, RouteType type, const uint8_t *realSourceMac = nullptr);
     void subscribeMqttTopic(const String &topic, uint8_t qos = 1);
     void publishMqtt(const String &source, const String &destination, const String &action, const String &message);
     void publishENow(const String &source, const String &destination, const String &action, const String &message);
