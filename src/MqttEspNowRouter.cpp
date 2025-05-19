@@ -255,14 +255,25 @@ void MqttEspNowRouter::handleEspNowMessage(const uint8_t *mac, const uint8_t *da
   }
 }
 
-void MqttEspNowRouter::subscribe(const String &source, const String &destination, const String &action, LocalHandler handler, RouteType type)
+void MqttEspNowRouter::subscribe(const String &source, const uint8_t *realSourceMac, const String &destination, const String &action, LocalHandler handler, RouteType type)
 {
   
   if (routeCount >= MAX_ROUTES)
     return;
   String topic = source + ">" + destination + "/" + action;
-  const uint8_t* peerMac = getPeerMacByName(source);
-  if (peerMac == nullptr) {
+  const uint8_t* peerMac;
+
+  if (realSourceMac != nullptr) {
+      if (!isMacValid(realSourceMac)) { 
+          Serial.println("⚠️ MAC inválido em realSourceMac.");
+          return;
+      }
+      peerMac = realSourceMac;
+  } else {
+      peerMac = getPeerMacByName(source);
+  }
+
+  if (peerMac == nullptr || !isMacValid(peerMac)) { 
       Serial.print("⚠️ Dispositivo com nome '");
       Serial.print(source);
       Serial.println("' não encontrado.");
@@ -349,7 +360,12 @@ bool MqttEspNowRouter::isLocalMac(const uint8_t *mac)
   WiFi.macAddress(routerMac);
   return memcmp(mac, routerMac, 6) == 0 || memcmp(mac, "\0\0\0\0\0\0", 6) == 0;
 }
-
+bool MqttEspNowRouter::isMacValid(const uint8_t* mac) {
+    for (int i = 0; i < 6; i++) {
+        if (mac[i] != 0) return true;
+    }
+    return false;
+}
 const uint8_t* MqttEspNowRouter::getPeerMacByName(const String& name) const {
     String cleanedName = name;
     cleanedName.trim();

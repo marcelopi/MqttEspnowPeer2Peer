@@ -79,11 +79,7 @@ void EspNowPeer::addPeer(const uint8_t *peerMac) {
         Serial.println("ℹ️ Peer já está registrado (ESP8266).");
     } else {
         bool success = esp_now_add_peer((uint8_t*)peerMac, ESP_NOW_ROLE_COMBO, this->espnowChannel, NULL, 0);
-        if (success) {
-            Serial.println("✅ Peer adicionado com sucesso (ESP8266).");
-        } else {
-            Serial.println("❌ Falha ao adicionar peer (ESP8266).");
-        }
+         Serial.println("✅ Peer adicionado com sucesso (ESP8266).");
     }
 #endif
 }
