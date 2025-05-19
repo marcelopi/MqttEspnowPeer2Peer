@@ -434,20 +434,34 @@ void MqttEspNowRouter::handlePeerVerification(int timeoutMin)
     Serial.println("🔍 Verificando estado dos peers...");
 
     for (auto& peer : childrenPeers) {
+        // --- Novo: Reparo de peers offline ---
+        if (!peer.online) {
+            Serial.printf("🔄 Tentando reparar peer offline: %s\n", peer.name.c_str());
+            
+            #if defined(ESP32)
+                esp_now_del_peer(peer.mac); // Remove o peer antigo (ESP32)
+            #elif defined(ESP8266)
+                esp_now_del_peer(const_cast<uint8_t*>(peer.mac)); // Remove (ESP8266)
+            #endif
+            
+            addPeer(peer.mac); // Re-adiciona o peer
+        }
+
+        // Verifica registro do peer (código existente)
         if (!esp_now_is_peer_exist(peer.mac)) {
             Serial.print("🔄 Peer não registrado, adicionando novamente: ");
             Serial.println(peer.name);
             addPeer(peer.mac);
         }
 
-        // Envia um PING via ESP-NOW a cada 30s
+        // Envia PING periódico (código existente)
         if (now - peer.lastPingSent > 30 * 1000) {
             peer.lastPingSent = now;
             publishENow(routerName, peer.name, "PING", "PING");
             Serial.println("📨 Enviado PING para " + peer.name);
         }
 
-        // Verifica se o peer está online ou offline (sem resposta por 2 minutos)
+        // Verifica estado online/offline (código existente)
         if (now - peer.lastPongReceived > 120 * 1000) {
             if (peer.online) {
                 Serial.println("⚠️ Peer " + peer.name + " está offline.");

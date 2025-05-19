@@ -302,6 +302,20 @@ void EspNowPeer::handlePeerVerification(int timeoutMin)
     Serial.println("🔍 Verificando estado dos peers...");
 
     for (auto& peer : childrenPeers) {
+        // Remover peer se estiver offline
+        if (!peer.online) {
+            Serial.printf("🔄 Tentando reparar peer offline: %s\n", peer.name.c_str());
+            
+            #if defined(ESP32)
+                esp_now_del_peer(peer.mac); // Remove o peer antigo
+            #elif defined(ESP8266)
+                esp_now_del_peer((uint8_t*)peer.mac); 
+            #endif
+            
+            addPeer(peer.mac); // Re-adiciona o peer
+        }
+
+        // Verificar registro do peer 
         if (!esp_now_is_peer_exist(peer.mac)) {
             Serial.print("🔄 Peer não registrado, adicionando novamente: ");
             Serial.println(peer.name);
