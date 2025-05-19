@@ -118,10 +118,11 @@ void EspNowPeer::publishENow(const String &source, const String &destination, co
 
 #if defined(ESP8266)
             // ========== Código ESP8266 ==========
+            uint8_t* rawData = const_cast<uint8_t*>(msgData); // Remover const
             bool result = esp_now_send(
-                const_cast<uint8_t*>(peer.mac), 
-                msgData, 
-                msgLen   
+                const_cast<uint8_t*>(peerMac), // MAC sem const
+                rawData,                       // Dados sem const
+                msgLen                         // Tamanho
             );
             if (!result) {
                 Serial.println("❌ Falha no envio (ESP8266)");
@@ -145,10 +146,11 @@ void EspNowPeer::publishENow(const String &source, const String &destination, co
 
 #if defined(ESP8266)
         // ========== Código ESP8266 ==========
+        uint8_t* rawData = const_cast<uint8_t*>(msgData); // Remover const
         bool result = esp_now_send(
-            const_cast<uint8_t*>(peerMac), // Cast necessário
-            msgData, // Dados brutos
-            msgLen   // Tamanho correto
+            const_cast<uint8_t*>(peerMac), // MAC sem const
+            rawData,                       // Dados sem const
+            msgLen                         // Tamanho
         );
         if (!result) {
             Serial.println("❌ Falha no envio (ESP8266)");
