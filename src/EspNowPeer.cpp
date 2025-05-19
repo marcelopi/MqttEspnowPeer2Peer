@@ -124,7 +124,7 @@ void EspNowPeer::publishENow(const String &source, const String &destination, co
                 rawData,                       // Dados sem const
                 msgLen                         // Tamanho
             );
-            if (!result) {
+            if (result != ESP_OK) {
                 Serial.println("❌ Falha no envio (ESP8266)");
             }
 #else
@@ -152,7 +152,7 @@ void EspNowPeer::publishENow(const String &source, const String &destination, co
             rawData,                       // Dados sem const
             msgLen                         // Tamanho
         );
-        if (!result) {
+        if (result != ESP_OK) {
             Serial.println("❌ Falha no envio (ESP8266)");
         }
 #else
