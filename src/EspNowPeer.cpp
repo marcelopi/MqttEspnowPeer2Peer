@@ -215,17 +215,27 @@ void EspNowPeer::onReceive(const uint8_t* mac, const uint8_t* data, int len) {
             }
         }
     }
-    // Subscreve PING para todos os filhos e envia PONG
+    // Subscreve PING para todos os filhos e envia WQ   QW
     if (destination == instance->localName && action == "PING") {
-        instance->publishENow(source, destination, "PING", "PONG");
+        instance->publishENow(destination, source, "PING", "PONG");
         Serial.println("🔁 Respondido PING com PONG");
         return;
     }
 
     if (destination == instance->localName && action == "PONG") {
-        Serial.println("✅ Recebido PONG");
-        // Atualiza estado online aqui se quiser
-        // Exemplo: procurar o peer pelo nome e marcar online = true
+        Serial.println("✅ Recebendo e tratando mensagem PONG...");
+        String cleanedPeerName = instance->localName;
+        cleanedPeerName.trim();
+        for (const auto& peer : childrenPeers) {
+            String peerName = peer.name;
+            peerName.trim();
+            if (strcmp(peerName.c_str(), cleanedPeerName.c_str()) == 0) {
+                unsigned long now = millis();
+                peer.lastPongReceived = now;
+                peer.online = true;
+                break;
+            }
+        }
         return;
     }
 
@@ -280,45 +290,41 @@ int32_t EspNowPeer::getWiFiChannel(const char *ssid) {
     return 0;
 }
 
-void EspNowPeer::handlePeerVerification(int timeoutMin) {
-    unsigned long timeoutMillis = (unsigned long)timeoutMin * 60 * 1000;
+void EspNowPeer::handlePeerVerification(int timeoutMin) 
+{
+    unsigned long now = millis();
 
-    if (millis() - _lastActivity > timeoutMillis) {
-        _lastActivity = millis();
-        Serial.println("🔍 Verificação de peers...");
+    if (now - this->_lastActivity < timeoutMin * 60 * 1000) return;
 
-        // Verifica e adiciona peers se necessário
-        auto verifyPeerList = [&](std::vector<DeviceInfo>& peers) {
-            for (auto& peer : peers) {
-                if (!esp_now_is_peer_exist(peer.mac)) {
-                    Serial.print("➕ Peer ausente, adicionando: ");
-                    Serial.println(peer.name);
-                    addPeer(peer.mac);
-                }
+    this->_lastActivity = now;
+    Serial.println("🔍 Verificando estado dos peers...");
+
+    for (auto& peer : childrenPeers) {
+        if (!esp_now_is_peer_exist(peer.mac)) {
+            Serial.print("🔄 Peer não registrado, adicionando novamente: ");
+            Serial.println(peer.name);
+            addPeer(peer.mac);
+        }
+
+        // Envia um PING via ESP-NOW a cada 30s
+        if (now - peer.lastPingSent > 30 * 1000) {
+            peer.lastPingSent = now;
+            publishENow(localName, peer.name, "PING", "PING");
+            Serial.println("📨 Enviado PING para " + peer.name);
+        }
+
+        // Verifica se o peer está online ou offline (sem resposta por 2 minutos)
+        if (now - peer.lastPongReceived > 120 * 1000) {
+            if (peer.online) {
+                Serial.println("⚠️ Peer " + peer.name + " está offline.");
+                peer.online = false;
             }
-        };
-
-        verifyPeerList(routers);
-        verifyPeerList(childrenPeers);
-
-        // Envia PING para todos os roteadores
-        for (auto& router : routers) {
-            router.lastPingSent = millis();
-            router.online = false;  // Será atualizado se receber PONG
-            publishENow(this->localName, router.name, "PING", "PING");
-            Serial.print("📤 Enviado PING para ");
-            Serial.println(router.name);
+        } else {
+            if (!peer.online) {
+                Serial.println("✅ Peer " + peer.name + " voltou online.");
+                peer.online = true;
+            }
         }
-
-        // Envia PING para todos os filhos (peer children)
-        for (auto& child : childrenPeers) {
-            child.lastPingSent = millis();
-            child.online = false;
-            publishENow(this->localName, child.name, "PING", "PING");
-            Serial.print("📤 Enviado PING para filho ");
-            Serial.println(child.name);
-        }
-
     }
 }
 
