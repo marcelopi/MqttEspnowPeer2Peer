@@ -205,23 +205,13 @@ void EspNowPeer::onReceive(const uint8_t* mac, const uint8_t* data, int len) {
     Serial.print("Mensagem: ");
     Serial.println(message);
 
-    // Primeiro tenta rota local
-    for (int i = 0; i < instance->routeCount; ++i) {
-        const Route& r = instance->routes[i];
-        if (r.destination == destination) {
-            if (r.handler) {
-                r.handler(message);
-                return;
-            }
-        }
-    }
-    // Subscreve PING para todos os filhos e envia
+    // Subscreve PING e responde com PONG
     if (destination == instance->localName && action == "PING") {
         instance->publishENow(destination, source, "PONG", "PONG");
         Serial.println("🔁 Respondido PING com PONG");
         return;
     }
-
+    // Subscreve PONG e registrando lastPongReceived e peer.online = true
     if (destination == instance->localName && action == "PONG") {
         Serial.println("✅ Recebendo e tratando mensagem PONG...");
         String cleanedPeerName = instance->localName;
@@ -239,6 +229,16 @@ void EspNowPeer::onReceive(const uint8_t* mac, const uint8_t* data, int len) {
         return;
     }
 
+    // Primeiro tenta rota local
+    for (int i = 0; i < instance->routeCount; ++i) {
+        const Route& r = instance->routes[i];
+        if (r.destination == destination) {
+            if (r.handler) {
+                r.handler(message);
+                return;
+            }
+        }
+    }
     // Se chegou aqui, não encontrou destino local, tenta repassar
     if (destination == "ALL" && source != instance->localName) {
         instance->publishENow(source, "ALL", action, message);
