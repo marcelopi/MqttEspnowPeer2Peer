@@ -1,6 +1,5 @@
 # ######################################
-# ######################################
-# UNDER CONSTRUCTION DONT USE !!
+# BETA VERSION 1.1.8
 # ######################################
 # ######################################
 # MqttEspnowPeer2Peer  
@@ -8,10 +7,13 @@
 # Inspiration and Core Concept
 
 This system was designed to unify MQTT and ESP-NOW paradigms, creating a transparent communication layer where:
-ESP-NOW acts as "Wireless MQTT": Messages are routed using topic patterns (source/destination/action), simulating MQTT's publish/subscribe model without requiring a central broker.
+ESP-NOW acts as "Wireless MQTT": Messages are routed using topic patterns (source/destination/action), simulating MQTT's publish/subscribe model without requiring a central broker. 
+This Library includes implemented methods to update using OTA protocol (over the air) using ESP-NOW.
 Full Abstraction: Developers interact with a single API while the library automatically chooses between:
 ESP-NOW: For local peer-to-peer communication (ESP32/ESP8266)
 MQTT: For cloud/remote connectivity (ESP32 Router only)
+
+
 
 [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-30363D?style=for-the-badge&logo=GitHub-Sponsors&logoColor=white)](https://github.com/sponsors/marcelopi)
 

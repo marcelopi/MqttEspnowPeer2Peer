@@ -18,6 +18,7 @@ uint8_t channel;
 
 wifiConnManager wifiConnMng; // Instância do cliente Controlador de conexões
 EspNowPeer eNowPeer;         // Instância do cliente ESP-NOW
+NtpManager ntp;
 bool ntpStarted = false;
 
 unsigned long currentMillis = 0;
@@ -34,33 +35,50 @@ void setup()
 
   wifiConnMng.onEspNowReady([]() {
     Serial.println("📢 Evento: ESP-NOW está pronto. Iniciando EspNowPeer...");
-    eNowPeer.begin(channel, localName, Routers, childrenPeers);
+    eNowPeer.begin(channel, localName, Parents, childrenPeers);
       if (!wifiConnMng.isInUpdateMode()){
         // Sincronização NTP
-        eNowPeer.subscribe(Routers[0].name, "ALL", "NTPTIME", [](String message) {
+        eNowPeer.subscribe(Parents[0].name, "ALL", "NTPTIME", [](String message) {
           unsigned long epoch = message.toInt();
-          NtpManager::setEpochTime(epoch);
+          ntp.setEpochTime(epoch);
           Serial.print("Tempo atualizado: ");
-          NtpManager::printDateTime();
+          ntp.printDateTime();
+          Serial.println("⏭️ Repassando mensagem para o próximo da cadeia...");
+          eNowPeer.publishENow(localName, // Origem
+                              "ALL", // Destino
+                              "NTPTIME",   // Ação
+                              message);  // Mensagem
+        });
+
+        // Repassa status do filho para router
+        eNowPeer.subscribe(childrenPeers[0].name, localName, "STATUS", [](String message) {
+          Serial.println("⏮️ Repassando status do filho para o router");
+          eNowPeer.publishENow(childrenPeers[0].name, // Origem
+                              Parents[0].name, // Destino
+                              "STATUS",   // Ação
+                              "Online");  // Mensagem
+          ntp.printDateTime();
         });
 
         // Controle do refletor
-        eNowPeer.subscribe(Routers[0].name, localName, "BTN_REF_A_SERV", [](String message) {
+        eNowPeer.subscribe(Parents[0].name, localName, "ACTION_BUTTON_PEER1", [](String message) {
           if (message == "ON") {
             digitalWrite(outRefletorAreaServico, HIGH);
-            Serial.print("Refletor da área de serviço ligado em ");
+            Serial.print("Led ligado em ");
+            ntp.printDateTime();
           } else if (message == "OFF") {
             digitalWrite(outRefletorAreaServico, LOW);
-            Serial.print("Refletor da área de serviço desligado em ");
+            Serial.print("led desligado em ");
+            ntp.printDateTime();
           } else {
             Serial.print("Comando inválido: ");
             Serial.println(message);
           }
-          NtpManager::printDateTime();
+          ntp.printDateTime();
         });
 
         // Alternância de modo de rede
-        eNowPeer.subscribe(Routers[0].name, localName, "NET_MODE", [](String message) {
+        eNowPeer.subscribe(Parents[0].name, localName, "NET_MODE", [](String message) {
           if (message == "UPDATE") {
             Serial.println("Solicitado conexão Wi-Fi para atualização OTA");
             wifiConnMng.setNetMode(WIFI);
@@ -98,12 +116,15 @@ void loop()
     prevMillisSendStatus = millis();
     if (!wifiConnMng.isInUpdateMode())
     {
-      Serial.println("\n Enviando mensagem de status em ");
-      NtpManager::printDateTime();
-      eNowPeer.publishENow("REFASERV", // Origem
-                           "ROUTER01", // Destino
-                           "STATUS",   // Ação
-                           "Online");  // Mensagem
+      Serial.println("\n Enviando mensagem de status para Pais em ");
+      ntp.printDateTime();
+        for (const auto& peer : Parents) {
+          eNowPeer.publishENow(localName, // Origem
+                               peer.name, // Destino
+                              "STATUS",   // Ação
+                              "Online");  // Mensagem
+        }
+
       eNowPeer.handlePeerVerification(1);
     }
   }

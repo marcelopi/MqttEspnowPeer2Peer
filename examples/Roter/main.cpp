@@ -44,23 +44,22 @@ void setup()
         router.begin(channel, channel, routerName, routerMac, mqttServerName, childrenPeers, MQTT_SERVER_IP, 1883, MQTT_USER, MQTT_PWD);
         Serial.println("📢 Evento: ESP-NOW está conectado. Iniciando subscrição dos tópicos...");
         // Rota MQTT do broker para o master
-        router.subscribe(mqttServerName, "routerName", "BTN_REF_FUNDO", [](const String &message)
+        router.subscribe(mqttServerName, "REFFUNDO", "ACTION_BUTTON", [](const String &message)
                         {
           if (message == "ON") {
             digitalWrite(outRefletorFundo, HIGH);
-            Serial.println("Refletor do fundo ligado em "+ ntp.formatDateTimeNTP());
+            Serial.println("Led ligado em "+ ntp.formatDateTimeNTP());
           } else if (message == "OFF") {
             digitalWrite(outRefletorFundo, LOW);
-            Serial.println("Refletor do fundo desligado em "+ ntp.formatDateTimeNTP());
+            Serial.println("Led desligado em "+ ntp.formatDateTimeNTP());
           } else {
             Serial.print("Comando inválido: ");
             Serial.println(message);
-          } }, ROUTE_MQTT);
+          } }, ROUTE_MQTT, nullptr);
 
         // Rota MQTT que será enviada via ESPNOW para o client00 MAC[0]
-        router.subscribe(mqttServerName, childrenPeers[0].name, "BTN_REF_A_SERV", [](const String &msg)
+        router.subscribe(mqttServerName, childrenPeers[0].name, "ACTION_BUTTON_PEER1", [](const String &msg)
                         {
-            Serial.println("Callback acionado para ROBOTECTRL>REFASERV/BTN_REF_A_SERV");
             Serial.print("Conteúdo da mensagem: ");
             Serial.println(msg);
             Serial.print("Estado do ESP-NOW: ");
@@ -68,16 +67,15 @@ void setup()
             
             if(msg == "ON" || msg == "OFF") {
               Serial.println("Preparando para enviar via ESP-NOW...");
-              router.publishENow(routerName,childrenPeers[0].name,"BTN_REF_A_SERV", msg);
+              router.publishENow(routerName,childrenPeers[0].name,"ACTION_BUTTON_PEER1", msg);
               Serial.println("Comando enviado via ESP-NOW");
             } else {
-              Serial.println("Mensagem inválida para Peer");
-        } }, ROUTE_MQTT);
+              Serial.println("Mensagem inválida");
+        } }, ROUTE_MQTT, nullptr);
 
         // Rota MQTT que será enviada via ESPNOW para o client00 MAC[0] para habilitar wifi
         router.subscribe(mqttServerName, childrenPeers[0].name, "NET_MODE", [](const String &msg)
                         {
-            Serial.println("Callback acionado.");
             Serial.print("Conteúdo da mensagem: ");
             Serial.println(msg);
             Serial.print("Estado do ESP-NOW: ");
@@ -88,17 +86,19 @@ void setup()
               router.publishENow(routerName,childrenPeers[0].name,"NET_MODE", msg);
               Serial.println("Comando enviado via ESP-NOW");
             } else {
-              Serial.println("Mensagem inválida para Peer");
-        } }, ROUTE_MQTT);
+              Serial.println("Mensagem inválida");
+        } }, ROUTE_MQTT, nullptr);
 
         // Mensagem recebida via ESPNOW que deve ser publicada no broker
-        router.subscribe(childrenPeers[0].name, routerName, "STATUS", [](const String &msg)
+        for (const auto& peer : chainPeers) {
+        router.subscribe(peer.name, routerName, "STATUS", [peer](const String &msg)
                         {
-                          Serial.print("Status do cliente1 recebido em " + ntp.formatDateTimeNTP() + ": ");
+                          Serial.print("Status do cliente recebido em " + ntp.formatDateTimeNTP() + ": ");
                           Serial.println(msg);
-                          router.publishMqtt(childrenPeers[0].name, routerName, "STATUS", msg); // <-- publicar no broker
+                          router.publishMqtt(peer.name, routerName, "STATUS", msg); // <-- publicar no broker
                         },
-                        ROUTE_ESPNOW);
+                        ROUTE_ESPNOW, childrenPeers[0].mac);
+        }
 
       });
 
@@ -135,4 +135,5 @@ void loop()
     router.handleReconnectMqtt(2);
   }
 }
+
 
