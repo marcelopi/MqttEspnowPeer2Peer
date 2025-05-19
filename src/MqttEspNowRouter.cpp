@@ -233,22 +233,25 @@ void MqttEspNowRouter::handleEspNowMessage(const uint8_t *mac, const uint8_t *da
   Serial.println(message);
 
 
-  if (destination == routerName && action == "PONG") {
-    Serial.println("Recebendo e tratando mensagem PONG...");
-    String cleanedrouterName = routerName;
-    cleanedrouterName.trim();
-    for (auto& peer : childrenPeers) {
-        String peerName = peer.name;
-        peerName.trim();
-        if (strcmp(peerName.c_str(), cleanedrouterName.c_str()) == 0) {
-            unsigned long now = millis();
-            peer.lastPongReceived = now;
-            peer.online = true;
-            break;
+    // Subscreve PONG e registrando lastPongReceived e peer.online = true
+    if (destination == instance->routerName && action == "PONG") {
+        Serial.println("✅ Recebendo e tratando mensagem PONG...");
+        String cleanedSource = source;
+        cleanedSource.trim();
+        for (auto& peer : instance->childrenPeers) { 
+            String peerName = peer.name;
+            peerName.trim();
+            if (strcmp(peerName.c_str(), cleanedSource.c_str()) == 0) {
+                Serial.print("🌍 Atualizado status online para peer:");
+                Serial.println(peer.name);
+                unsigned long now = millis();
+                peer.lastPongReceived = now; 
+                peer.online = true; 
+                break;
+            }
         }
+        return;
     }
-    return;
-  }
 
   if (routeCount == 0)
   {
@@ -452,7 +455,7 @@ void MqttEspNowRouter::handlePeerVerification(int timeoutMin)
             }
         } else {
             if (!peer.online) {
-                Serial.println("✅ Peer " + peer.name + " voltou online.");
+                Serial.println("🌍 Peer " + peer.name + " voltou online.");
                 peer.online = true;
             }
         }

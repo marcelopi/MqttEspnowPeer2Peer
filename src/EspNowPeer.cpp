@@ -214,12 +214,14 @@ void EspNowPeer::onReceive(const uint8_t* mac, const uint8_t* data, int len) {
     // Subscreve PONG e registrando lastPongReceived e peer.online = true
     if (destination == instance->localName && action == "PONG") {
         Serial.println("✅ Recebendo e tratando mensagem PONG...");
-        String cleanedPeerName = instance->localName;
-        cleanedPeerName.trim();
+        String cleanedSource = source;
+        cleanedSource.trim();
         for (auto& peer : instance->childrenPeers) { 
             String peerName = peer.name;
             peerName.trim();
-            if (strcmp(peerName.c_str(), cleanedPeerName.c_str()) == 0) {
+            if (strcmp(peerName.c_str(), cleanedSource.c_str()) == 0) {
+                Serial.print("🌍 Atualizado status online para peer:");
+                Serial.println(peer.name);
                 unsigned long now = millis();
                 peer.lastPongReceived = now; 
                 peer.online = true; 
@@ -321,7 +323,7 @@ void EspNowPeer::handlePeerVerification(int timeoutMin)
             }
         } else {
             if (!peer.online) {
-                Serial.println("✅ Peer " + peer.name + " voltou online.");
+                Serial.println("🌍 Peer " + peer.name + " voltou online.");
                 peer.online = true;
             }
         }
