@@ -210,9 +210,8 @@ void EspNowPeer::onReceive(const uint8_t* mac, const uint8_t* data, int len) {
         instance->publishENow(destination, source, "PONG", "PONG");
         Serial.println("🔁 Respondido PING com PONG");
         return;
-    }
     // Subscreve PONG e registrando lastPongReceived e peer.online = true
-    if (destination == instance->localName && action == "PONG") {
+    } else if (destination == instance->localName && action == "PONG") {
         Serial.println("✅ Recebendo e tratando mensagem PONG...");
         String cleanedSource = source;
         cleanedSource.trim();
@@ -229,20 +228,18 @@ void EspNowPeer::onReceive(const uint8_t* mac, const uint8_t* data, int len) {
             }
         }
         return;
-    }
-
-    // Primeiro tenta rota local
-    for (int i = 0; i < instance->routeCount; ++i) {
-        const Route& r = instance->routes[i];
-        if (r.destination == destination) {
-            if (r.handler) {
-                r.handler(message);
-                return;
+    } else if (destination == instance->localName){
+        for (int i = 0; i < instance->routeCount; ++i) {
+            const Route& r = instance->routes[i];
+            if (r.action == action) {
+                if (r.handler) {
+                    r.handler(message);
+                    return;
+                }
             }
         }
-    }
     // Se chegou aqui, não encontrou destino local, tenta repassar
-    if (destination == "ALL" && source != instance->localName) {
+    } else if (destination == "ALL" && source != instance->localName) {
         instance->publishENow(source, "ALL", action, message);
         Serial.println("Mensagem ALL repassada para o próximo cliente");
     } else {
