@@ -53,10 +53,9 @@ public:
     void publishENow(const String& source,
                     const String& destination, 
                     const String& action,
-                    const String& message,
-                    const uint8_t *realSourceMac = nullptr);
+                    const String& message);
     void handlePeerVerification(int timeoutMin);
-    void subscribe(const String &source, const String &destination, const String &action, LocalHandler handler,const uint8_t *realSourceMac = nullptr);
+    void subscribe(const String &source, const String &destination, const String &action, LocalHandler handler);
 private:
     uint32_t _lastActivity;
     const uint8_t *routerMac = 0;
@@ -70,7 +69,6 @@ private:
     void addPeer(const uint8_t *peerMac);
     static void onReceive(const uint8_t* mac, const uint8_t* data, int len);
     const uint8_t* getPeerMacByName(const String& name) const;
-    bool isMacValid(const uint8_t* mac);
     Route routes[MAX_ROUTES];
     int routeCount = 0;
 };
