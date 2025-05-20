@@ -239,7 +239,8 @@ void wifiConnManager::configureWiFiChannel()
         if (this->currentChannel == CHANNEL_AUTO)
             this->currentChannel = WiFi.channel();
 #elif defined(ESP8266)
-        // ESP8266 não possui WiFi.channel(), manter canal atual
+        if (this->currentChannel == CHANNEL_AUTO)
+        this->currentChannel = wifi_get_channel();
 #endif
     }
 
