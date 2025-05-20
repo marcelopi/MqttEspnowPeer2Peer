@@ -146,37 +146,56 @@ void wifiConnManager::startWiFi(int NetMode)
 #endif
 
     }
-    else if (NetMode == WIFI) 
-    {
-        Serial.println("\n🔄 Entrando em modo WI-FI");
-        WiFi.hostname(deviceName);
-        WiFi.config(localIP, gateway, subnet, dns);
-        Serial.println("\n✅ Iniciando Wifi");
-        WiFi.begin(ssid, wifiPwd);
-        configureWiFiChannel();
-        Serial.print("Conectando");
-        unsigned long startAttemptTime = millis();
-        while (WiFi.status() != WL_CONNECTED &&
-               millis() - startAttemptTime < netModeTimeout)
-        {
-            delay(500);
-            Serial.print(".");
-        }
+else if (NetMode == WIFI) 
+{
+    Serial.println("\n🔄 Entrando em modo WI-FI");
+    WiFi.hostname(deviceName);
 
-        if (WiFi.status() == WL_CONNECTED)
-        {
-            Serial.println("\n✅ Wi-fi Conectado.");
-            notifyWifiReady();
-            setupOTA();
-        }
-        else
-        {
-            Serial.println("\n⚠️ Falha ao conectar ao Wi-fi");
-            Serial.println("\nRetornando ao modo ESP-NOW");
-            this->startWiFi(0);
-        }
-        lastActivity = millis();
-    } else if (NetMode == HYBRID) 
+#ifdef ESP32
+    // No ESP32 faz sentido configurar IP fixo antes do WiFi.begin
+    WiFi.config(localIP, gateway, subnet, dns);
+    Serial.println("\n✅ Iniciando Wifi");
+    WiFi.begin(ssid, wifiPwd);
+    configureWiFiChannel();  // pode ser antes da conexão no ESP32
+
+#elif defined(ESP8266)
+    // No ESP8266, evite chamar WiFi.config() se IP fixo não estiver definido (localIP != 0.0.0.0)
+    if (localIP != IPAddress(0,0,0,0)) {
+        WiFi.config(localIP, gateway, subnet, dns);
+    }
+    Serial.println("\n✅ Iniciando Wifi");
+    WiFi.begin(ssid, wifiPwd);
+#endif
+
+    Serial.print("Conectando");
+    unsigned long startAttemptTime = millis();
+    while (WiFi.status() != WL_CONNECTED &&
+           millis() - startAttemptTime < netModeTimeout)
+    {
+        delay(500);
+        Serial.print(".");
+    }
+
+    if (WiFi.status() == WL_CONNECTED)
+    {
+        Serial.println("\n✅ Wi-fi Conectado.");
+
+#ifdef ESP8266
+        // Configure o canal APÓS a conexão no ESP8266
+        configureWiFiChannel();
+#endif
+
+        notifyWifiReady();
+        setupOTA();
+    }
+    else
+    {
+        Serial.println("\n⚠️ Falha ao conectar ao Wi-fi");
+        Serial.println("\nRetornando ao modo ESP-NOW");
+        this->startWiFi(ESPNOW);
+    }
+    lastActivity = millis();
+} else if (NetMode == HYBRID) 
     {
         Serial.println("\n✅ Iniciando Wifi");
         WiFi.hostname(deviceName);
