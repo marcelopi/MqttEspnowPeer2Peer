@@ -12,10 +12,9 @@ extern "C" {
 }
 #include <espnow.h>
 #include <EEPROM.h>
-#define EEPROM_SIZE 1
-#define EEPROM_ADDR_WIFI_MODE 0
-#define EEPROM_ADDR_UPDATE_MODE 1
-
+#define EEPROM_SIZE 8
+#define EEPROM_ADDR_WIFI_MODE      0   // 1 byte
+#define EEPROM_ADDR_UPDATE_MODE    1   // 1 byte
 #define EEPROM_DEFAULT_VALUE 0xFF
 #endif
 #include <ArduinoOTA.h>

@@ -64,49 +64,48 @@ void wifiConnManager::getNetMode(int defaultNetMode){
 #elif defined(ESP8266)
     EEPROM.begin(EEPROM_SIZE);
 
-    // Se for HYBRID, sempre usar e gravar
     if (defaultNetMode == HYBRID) {
         this->netMode = HYBRID;
-        EEPROM.write(EEPROM_ADDR_UPDATE_MODE, HYBRID);
+        EEPROM.write(EEPROM_ADDR_WIFI_MODE, HYBRID);
         EEPROM.commit();
-        Serial.printf("\n📥 Forçando modo de Network: HYBRID\n");
+        Serial.println("🔁 Modo HYBRID forçado e salvo (ESP8266)");
     } else {
-        uint8_t val = EEPROM.read(EEPROM_ADDR_UPDATE_MODE);
-        if (val == EEPROM_DEFAULT_VALUE) {
+        uint8_t savedMode = EEPROM.read(EEPROM_ADDR_WIFI_MODE);
+        if (savedMode == EEPROM_DEFAULT_VALUE || savedMode > HYBRID) {
             this->netMode = defaultNetMode;
-            EEPROM.write(EEPROM_ADDR_UPDATE_MODE, this->netMode);
+            EEPROM.write(EEPROM_ADDR_WIFI_MODE, defaultNetMode);
             EEPROM.commit();
-            Serial.println("⚠️ EEPROM sem valor. Setado modo padrão.");
+            Serial.printf("💾 Nenhum valor válido, usando padrão %d (ESP8266)\n", defaultNetMode);
         } else {
-            this->netMode = val;
+            this->netMode = savedMode;
+            Serial.printf("📥 Modo carregado da EEPROM: %d (ESP8266)\n", savedMode);
         }
-
-        const char* modeStr = "UNDEFINED";
-        switch (this->netMode) {
-            case 0: modeStr = "ESPNOW"; break;
-            case 1: modeStr = "WIFI"; break;
-            case 2: modeStr = "HYBRID"; break;
-        }
-        Serial.printf("\n📥 Modo de Network: %s\n", modeStr);
     }
+
+    EEPROM.end();
 #endif
 }
 
 
-void wifiConnManager::setNetMode( int NetMode)
+void wifiConnManager::setNetMode(int NetMode)
 {
-        this->netMode = NetMode;
+    // Validação opcional (evita salvar valores inválidos)
+    if (NetMode != ESPNOW && NetMode != WIFI && NetMode != HYBRID) {
+        Serial.println("⚠️ Modo de rede inválido.");
+        return;
+    }
+    this->netMode = NetMode;
 #ifdef ESP32
-        this->preferences.putInt("mode", this->netMode);
-        
-        preferences.end();
+    preferences.putInt("mode", this->netMode);
+    preferences.end();  // só se você não pretende mais usar `preferences`
 #elif defined(ESP8266)
-        EEPROM.write(EEPROM_ADDR_WIFI_MODE, netMode);
-        EEPROM.commit();
+    EEPROM.begin(EEPROM_SIZE);  // Garanta que está sendo feito antes em algum ponto
+    EEPROM.write(EEPROM_ADDR_WIFI_MODE, netMode);
+    EEPROM.commit();
 #endif
-        Serial.println("✅ Atualização solicitada, reiniciando...");
-        delay(1000);
-        ESP.restart();
+    Serial.printf("✅ Modo de rede atualizado para %d. Reiniciando...\n", netMode);
+    delay(1000);
+    ESP.restart();
 }
 
 
