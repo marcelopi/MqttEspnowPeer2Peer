@@ -63,7 +63,6 @@ void wifiConnManager::getNetMode(int defaultNetMode){
 
 #elif defined(ESP8266)
     EEPROM.begin(EEPROM_SIZE);
-
     if (defaultNetMode == HYBRID) {
         this->netMode = HYBRID;
         EEPROM.write(EEPROM_ADDR_WIFI_MODE, HYBRID);
@@ -72,16 +71,15 @@ void wifiConnManager::getNetMode(int defaultNetMode){
     } else {
         uint8_t savedMode = EEPROM.read(EEPROM_ADDR_WIFI_MODE);
         if (savedMode == EEPROM_DEFAULT_VALUE || savedMode > HYBRID) {
-            this->netMode = defaultNetMode;
-            EEPROM.write(EEPROM_ADDR_WIFI_MODE, defaultNetMode);
+            this->netMode = ESPNOW;  // ✅ Default real para ESP8266
+            EEPROM.write(EEPROM_ADDR_WIFI_MODE, this->netMode);
             EEPROM.commit();
-            Serial.printf("💾 Nenhum valor válido, usando padrão %d (ESP8266)\n", defaultNetMode);
+            Serial.println("💾 Nenhum valor válido. Usando ESPNOW como padrão (ESP8266)");
         } else {
             this->netMode = savedMode;
             Serial.printf("📥 Modo carregado da EEPROM: %d (ESP8266)\n", savedMode);
         }
     }
-
     EEPROM.end();
 #endif
 }
