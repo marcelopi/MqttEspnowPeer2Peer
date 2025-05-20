@@ -137,7 +137,7 @@ void MqttEspNowRouter::publishMqtt(const String &source, const String &destinati
 
 void MqttEspNowRouter::publishENow(const String &source,
                                    const String &destination, const String &action,
-                                   const String &message)
+                                   const String &message, const uint8_t *realSourceMac)
 {
   if (!ready)
   {
@@ -161,8 +161,19 @@ void MqttEspNowRouter::publishENow(const String &source,
             }
         }
     } else {
-        const uint8_t* peerMac = getPeerMacByName(destination);
-        if (peerMac == nullptr) {
+
+        const uint8_t* peerMac;
+        if (realSourceMac != nullptr) {
+            if (!isMacValid(realSourceMac)) { 
+                Serial.println("⚠️ MAC inválido em realSourceMac.");
+                return;
+            }
+            peerMac = realSourceMac;
+        } else {
+            peerMac = getPeerMacByName(destination);
+        }
+
+        if (peerMac == nullptr || !isMacValid(peerMac)) { 
             Serial.print("⚠️ Dispositivo com nome '");
             Serial.print(destination);
             Serial.println("' não encontrado.");

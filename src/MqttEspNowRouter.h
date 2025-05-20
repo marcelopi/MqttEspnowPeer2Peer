@@ -56,10 +56,9 @@ public:
     void subscribe(const String &source, const String &destination, const String &action, LocalHandler handler, RouteType type, const uint8_t *realSourceMac = nullptr);
     void subscribeMqttTopic(const String &topic, uint8_t qos = 1);
     void publishMqtt(const String &source, const String &destination, const String &action, const String &message);
-    void publishENow(const String &source, const String &destination, const String &action, const String &message);
+    void publishENow(const String &source, const String &destination, const String &action, const String &message, const uint8_t *realSourceMac = nullptr);
     void handleReconnectMqtt(int timeoutMin);
     void handlePeerVerification(int timeoutMin);
-    void onWiFiConnected();
 private:
     uint32_t lastActivity;
     AsyncMqttClient mqttClient;
