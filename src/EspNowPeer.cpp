@@ -84,24 +84,48 @@ void EspNowPeer::addPeer(const uint8_t *peerMac) {
 #endif
 }
 
-void EspNowPeer::subscribe(const String &source, const String &destination, const String &action, LocalHandler handler) {
+void EspNowPeer::subscribe(const String &source, const String &destination, const String &action, LocalHandler handler, const uint8_t *realSourceMac) {
     if (routeCount >= MAX_ROUTES) {
         Serial.println("⚠️ Número máximo de rotas atingido.");
         return;
     }
 
+
+    const uint8_t* peerMac;
+
+    if (realSourceMac != nullptr) {
+        if (!isMacValid(realSourceMac)) { 
+            Serial.println("⚠️ MAC inválido em realSourceMac.");
+            return;
+        }
+        peerMac = realSourceMac;
+    } else {
+        peerMac = getPeerMacByName(source);
+    }
+    if (peerMac == nullptr || !isMacValid(peerMac)) { 
+        Serial.print("⚠️ Dispositivo com nome '");
+        Serial.print(source);
+        Serial.println("' não encontrado.");
+        return;
+    }
     Route& route = routes[routeCount++];
     route.source = source;
     route.destination = destination;
     route.action = action;
+    memcpy(route.mac, peerMac, 6);
     route.handler = handler;
 
     Serial.printf("🔗 Rota registrada: src=%s dest=%s act=%s\n", source.c_str(), destination.c_str(), action.c_str());
 }
 
+bool EspNowPeer::isMacValid(const uint8_t* mac) {
+    for (int i = 0; i < 6; i++) {
+        if (mac[i] != 0) return true;
+    }
+    return false;
+}
 
-
-void EspNowPeer::publishENow(const String &source, const String &destination, const String &action, const String &message) {
+void EspNowPeer::publishENow(const String &source, const String &destination, const String &action, const String &message, const uint8_t *realSourceMac) {
     String fullMsg = source + ">" + destination + "/" + action + "|" + message;
     const uint8_t* msgData = (uint8_t *)fullMsg.c_str();
 
@@ -133,9 +157,21 @@ void EspNowPeer::publishENow(const String &source, const String &destination, co
             Serial.println(fullMsg);
         }
     } else {
-        const uint8_t* peerMac = getPeerMacByName(destination);
-        if (peerMac == nullptr) {
-            Serial.printf("⚠️ Dispositivo '%s' não encontrado.\n", destination.c_str());
+        const uint8_t* peerMac;
+
+        if (realSourceMac != nullptr) {
+            if (!isMacValid(realSourceMac)) { 
+                Serial.println("⚠️ MAC inválido em realSourceMac.");
+                return;
+            }
+            peerMac = realSourceMac;
+        } else {
+            peerMac = getPeerMacByName(destination);
+        }
+        if (peerMac == nullptr || !isMacValid(peerMac)) { 
+            Serial.print("⚠️ Dispositivo com nome '");
+            Serial.print(source);
+            Serial.println("' não encontrado.");
             return;
         }
 
@@ -210,8 +246,9 @@ void EspNowPeer::onReceive(const uint8_t* mac, const uint8_t* data, int len) {
         instance->publishENow(destination, source, "PONG", "PONG");
         Serial.println("🔁 Respondido PING com PONG");
         return;
+    }
     // Subscreve PONG e registrando lastPongReceived e peer.online = true
-    } else if (destination == instance->localName && action == "PONG") {
+    if (destination == instance->localName && action == "PONG") {
         Serial.println("✅ Recebendo e tratando mensagem PONG...");
         String cleanedSource = source;
         cleanedSource.trim();
@@ -228,18 +265,20 @@ void EspNowPeer::onReceive(const uint8_t* mac, const uint8_t* data, int len) {
             }
         }
         return;
-    } else if (destination == instance->localName){
-        for (int i = 0; i < instance->routeCount; ++i) {
-            const Route& r = instance->routes[i];
-            if (r.action == action) {
-                if (r.handler) {
-                    r.handler(message);
-                    return;
-                }
+    }
+
+    // Primeiro tenta rota local
+    for (int i = 0; i < instance->routeCount; ++i) {
+        const Route& r = instance->routes[i];
+        if (r.destination == destination) {
+            if (r.handler) {
+                r.handler(message);
+                return;
             }
         }
+    }
     // Se chegou aqui, não encontrou destino local, tenta repassar
-    } else if (destination == "ALL" && source != instance->localName) {
+    if (destination == "ALL" && source != instance->localName) {
         instance->publishENow(source, "ALL", action, message);
         Serial.println("Mensagem ALL repassada para o próximo cliente");
     } else {
@@ -340,3 +379,7 @@ void EspNowPeer::handlePeerVerification(int timeoutMin)
         }
     }
 }
+
+
+
+

@@ -5,6 +5,8 @@
 #include <Arduino.h>
 #include "esp_now.h"
 #include <Preferences.h>
+#include <vector>
+#include <ESPAsyncWebServer.h>
 #elif defined(ESP8266)
 #include <ESP8266WiFi.h>
 extern "C" {
@@ -12,9 +14,10 @@ extern "C" {
 }
 #include <espnow.h>
 #include <EEPROM.h>
-#define EEPROM_SIZE 8
-#define EEPROM_ADDR_WIFI_MODE      0   // 1 byte
-#define EEPROM_ADDR_UPDATE_MODE    1   // 1 byte
+#define EEPROM_SIZE 1
+#define EEPROM_ADDR_WIFI_MODE 0
+#define EEPROM_ADDR_UPDATE_MODE 1
+
 #define EEPROM_DEFAULT_VALUE 0xFF
 #endif
 #include <ArduinoOTA.h>
@@ -24,14 +27,17 @@ extern "C" {
 #define WIFI 1
 #define HYBRID 2
 
+using UpdateModeCallback = std::function<void(const String& deviceName)>;
+
+
 class wifiConnManager
 {
 public:
     static wifiConnManager *instance; // Ponteiro estático para a instância
-
+    UpdateModeCallback onUpdateModeCallback;
     uint8_t begin(const char *deviceName, const char *ssid, const char *wifiPwd, const char *otaPwd,
                uint8_t defaultChannel, IPAddress localIP, IPAddress gateway,
-               IPAddress subnet, IPAddress dns, int netMode = ESPNOW);
+               IPAddress subnet, IPAddress dns, int netMode = ESPNOW, const std::vector<String>& deviceOtaList = {});
 
     wifiConnManager();
 
@@ -41,8 +47,10 @@ public:
     void printNetworkInfo();
     void onEspNowReady(std::function<void()> callback);
     void onWifiReady(std::function<void()> callback);
-
+    void setupWebServer();
+    void onUpdateMode(UpdateModeCallback cb);
 private:
+    AsyncWebServer server;
     const char *deviceName;
     const char *ssid;
     const char *wifiPwd;
@@ -55,6 +63,7 @@ private:
     int netMode;
     bool espNowReady = false;
     bool wifiReady = false;
+    std::vector<String> deviceOtaList;
     uint32_t lastActivity;
     unsigned long startAttemptTime;
     const unsigned long netModeTimeout = 10*60*1000;

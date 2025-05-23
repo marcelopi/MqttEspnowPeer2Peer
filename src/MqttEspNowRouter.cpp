@@ -67,14 +67,13 @@ void MqttEspNowRouter::configureMQTT() {
 
     mqttClient.onConnect([this](bool sessionPresent) {
         Serial.println("\n✅ Conectado ao broker MQTT!");
-        if (this->ready) {
-            this->processPendingRoutes();
-        }
+        this->notifyMqttReconnect();
     });
 
-    mqttClient.onDisconnect([](AsyncMqttClientDisconnectReason reason) {
+    mqttClient.onDisconnect([this](AsyncMqttClientDisconnectReason reason) {
         Serial.print("Desconectado do MQTT. Motivo: ");
         Serial.println(static_cast<int>(reason));
+        this->mqttConnected = false;
     });
 
     mqttClient.onMessage(mqttCallback);
@@ -87,22 +86,36 @@ void MqttEspNowRouter::configureMQTT() {
     mqttClient.connect();
 }
 
-void MqttEspNowRouter::processPendingRoutes()
+void MqttEspNowRouter::processSubscribeRoutes()
 {
   if (!ready || !mqttClient.connected())
   {
-    Serial.println("processPendingRoutes: Aguardando redes prontas (ESP-NOW ou MQTT).");
+    Serial.println("⏳ Aguardando redes prontas (ESP-NOW ou MQTT) para processar rotas.");
     return;
   }
 
-  Serial.println("Processando rotas pendentes...");
+  Serial.println("🔄 Processando rotas em subscribeRoutes...");
 
-  for (const PendingRoute &pending : pendingRoutes)
+  for (const PendingRoute &route : subscribeRoutes)
   {
-    subscribe(pending.source, pending.destination, pending.action, nullptr, pending.type);
+    String topic = route.source + ">" + route.destination + "/" + route.action;
+
+    // Assinar tópico MQTT
+    if (route.type == ROUTE_MQTT || route.type == ROUTE_BOTH)
+    {
+      subscribeMqttTopic(topic);
+    }
+
+    // Adicionar peer ESP-NOW se não for local
+    if ((route.type == ROUTE_ESPNOW || route.type == ROUTE_BOTH) &&
+        !isLocalMac(route.mac))
+    {
+      addPeer(route.mac);
+    }
   }
 
-  pendingRoutes.clear();
+  Serial.println("✅ Todas as rotas processadas.");
+  // ❌ NÃO limpar subscribeRoutes — permanece como lista persistente!
 }
 
 void MqttEspNowRouter::subscribeMqttTopic(const String &topic, uint8_t qos)
@@ -287,73 +300,83 @@ void MqttEspNowRouter::handleEspNowMessage(const uint8_t *mac, const uint8_t *da
   }
 }
 
-void MqttEspNowRouter::subscribe(const String &source, const String &destination, const String &action, LocalHandler handler, RouteType type, const uint8_t *realSourceMac)
+void MqttEspNowRouter::subscribe(const String &source, const String &destination, const String &action,
+                                 LocalHandler handler, RouteType type, const uint8_t *realSourceMac)
 {
-  
   if (routeCount >= MAX_ROUTES)
+  {
+    Serial.println("❌ Limite máximo de rotas atingido.");
     return;
+  }
+
   String topic = source + ">" + destination + "/" + action;
-  const uint8_t* peerMac;
+  const uint8_t *peerMac = realSourceMac != nullptr ? realSourceMac : getPeerMacByName(source);
 
-  if (realSourceMac != nullptr) {
-      if (!isMacValid(realSourceMac)) { 
-          Serial.println("⚠️ MAC inválido em realSourceMac.");
-          return;
-      }
-      peerMac = realSourceMac;
-  } else {
-      peerMac = getPeerMacByName(source);
+  if (peerMac == nullptr || !isMacValid(peerMac))
+  {
+    Serial.print("⚠️ MAC inválido para source '");
+    Serial.print(source);
+    Serial.println("'.");
+    return;
   }
 
-  if (peerMac == nullptr || !isMacValid(peerMac)) { 
-      Serial.print("⚠️ Dispositivo com nome '");
-      Serial.print(source);
-      Serial.println("' não encontrado.");
+  // 🚫 Verificar duplicatas no array de rotas
+  for (int i = 0; i < routeCount; i++)
+  {
+    if (routes[i].source == source &&
+        routes[i].destination == destination &&
+        routes[i].action == action &&
+        routes[i].type == type)
+    {
+      Serial.println("🔁 Rota já existente, não será adicionada novamente: " + topic);
       return;
+    }
   }
+
+  // 🚫 Verificar duplicatas no vetor subscribeRoutes
+  auto it = std::find_if(subscribeRoutes.begin(), subscribeRoutes.end(),
+                         [&](const PendingRoute &r)
+                         {
+                           return (r.source == source &&
+                                   r.destination == destination &&
+                                   r.action == action &&
+                                   r.type == type);
+                         });
+
+  if (it == subscribeRoutes.end())
+  {
+    PendingRoute pending = {source, destination, action, type};
+    memcpy(pending.mac, peerMac, 6);
+    subscribeRoutes.push_back(pending);
+    Serial.println("🆕 Adicionada rota ao vetor subscribeRoutes: " + topic);
+  }
+  else
+  {
+    Serial.println("🔁 Rota já presente em subscribeRoutes: " + topic);
+  }
+
+  // MQTT Subscription
+  if ((type == ROUTE_MQTT || type == ROUTE_BOTH) && mqttClient.connected())
+  {
+    subscribeMqttTopic(topic);
+  }
+
+  // Adicionar peer ESP-NOW se aplicável
+  if ((type == ROUTE_ESPNOW || type == ROUTE_BOTH) && !isLocalMac(peerMac))
+  {
+    addPeer(peerMac);
+  }
+
+  // Registrar rota no array
   routes[routeCount].source = source;
   routes[routeCount].destination = destination;
   routes[routeCount].action = action;
   memcpy(routes[routeCount].mac, peerMac, 6);
   routes[routeCount].handler = handler;
   routes[routeCount].type = type;
-
-  bool mqttOk = (type == ROUTE_ESPNOW) || mqttClient.connected();
-  bool espNowOk = (type == ROUTE_MQTT) || ready;
-
-  if (!mqttOk || (!espNowOk && (type == ROUTE_ESPNOW || type == ROUTE_BOTH) && !isLocalMac(peerMac)))
-  {
-    Serial.print("⏳ Tópico: ");
-    Serial.print(topic);
-    Serial.println(" adicionada à fila pendente.");
-
-    PendingRoute pending;
-    pending.source = source;
-    pending.destination = destination;
-    pending.action = action;
-    pending.type = type;
-    memcpy(pending.mac, peerMac, 6);
-    pendingRoutes.push_back(pending);
-
-    routeCount++;
-    return;
-  }
-
-  // MQTT Subscription
-  if ((type == ROUTE_MQTT || type == ROUTE_BOTH) && mqttClient.connected())
-  {
-    Serial.println("✅ Subscrevendo os tópicos MQTT...");
-    subscribeMqttTopic(topic);
-  }
-
-  // Adição de peer ESP-NOW
-  if ((type == ROUTE_ESPNOW || type == ROUTE_BOTH) && !isLocalMac(peerMac))
-  {
-      Serial.println("✅ Subscrevendo os tópicos ESP-NOW...");
-      addPeer(peerMac);
-  }
-
   routeCount++;
+
+  Serial.println("✅ Rota registrada: " + topic);
 }
 
 
@@ -420,6 +443,22 @@ const uint8_t* MqttEspNowRouter::getPeerMacByName(const String& name) const {
     return nullptr;
 }
 
+void MqttEspNowRouter::onMqttReconnect(std::function<void()> callback)
+{
+    mqttReconnectCallback = callback;
+    if (mqttConnected && mqttReconnectCallback) {
+        mqttReconnectCallback();   // executa na hora se já estiver pronto
+    }
+}
+
+void MqttEspNowRouter::notifyMqttReconnect(){
+    Serial.print("Reconectando ao MQTT, notificando callback...");
+    mqttConnected = true;
+    this->processSubscribeRoutes();
+    if (mqttReconnectCallback) {
+        mqttReconnectCallback(); 
+    }
+}
 
 void MqttEspNowRouter::handleReconnectMqtt(int timeoutMin)
 {

@@ -1,7 +1,9 @@
 #include "wifiConnManager.h"
+#include "OtaPage.h"
+
 wifiConnManager *wifiConnManager::instance = nullptr;
 
-wifiConnManager::wifiConnManager()
+wifiConnManager::wifiConnManager() : server(80)
 {
     wifiConnManager::instance = this;
 #ifdef ESP8266
@@ -12,14 +14,15 @@ wifiConnManager::wifiConnManager()
 
 uint8_t wifiConnManager::begin(const char *deviceName, const char *ssid, const char *wifiPwd, const char *otaPwd,
                             uint8_t defaultChannel, IPAddress localIP, IPAddress gateway,
-                            IPAddress subnet, IPAddress dns, int netMode)
+                            IPAddress subnet, IPAddress dns, int netMode, const std::vector<String>& deviceOtaList )
 {
     this->deviceName = deviceName;
     this->ssid = ssid;
     this->wifiPwd = wifiPwd;
     this->otaPwd = otaPwd;
     this->currentChannel = defaultChannel;
-    this->localIP = localIP;
+    this->deviceOtaList = deviceOtaList;
+      this->localIP = localIP;
     this->gateway = gateway;
     this->subnet = subnet;
     this->dns = dns;
@@ -63,47 +66,50 @@ void wifiConnManager::getNetMode(int defaultNetMode){
 
 #elif defined(ESP8266)
     EEPROM.begin(EEPROM_SIZE);
+
+    // Se for HYBRID, sempre usar e gravar
     if (defaultNetMode == HYBRID) {
         this->netMode = HYBRID;
-        EEPROM.write(EEPROM_ADDR_WIFI_MODE, HYBRID);
+        EEPROM.write(EEPROM_ADDR_UPDATE_MODE, HYBRID);
         EEPROM.commit();
-        Serial.println("🔁 Modo HYBRID forçado e salvo (ESP8266)");
+        Serial.printf("\n📥 Forçando modo de Network: HYBRID\n");
     } else {
-        uint8_t savedMode = EEPROM.read(EEPROM_ADDR_WIFI_MODE);
-        if (savedMode == EEPROM_DEFAULT_VALUE || savedMode > HYBRID) {
-            this->netMode = ESPNOW;  // ✅ Default real para ESP8266
-            EEPROM.write(EEPROM_ADDR_WIFI_MODE, this->netMode);
+        uint8_t val = EEPROM.read(EEPROM_ADDR_UPDATE_MODE);
+        if (val == EEPROM_DEFAULT_VALUE) {
+            this->netMode = defaultNetMode;
+            EEPROM.write(EEPROM_ADDR_UPDATE_MODE, this->netMode);
             EEPROM.commit();
-            Serial.println("💾 Nenhum valor válido. Usando ESPNOW como padrão (ESP8266)");
+            Serial.println("⚠️ EEPROM sem valor. Setado modo padrão.");
         } else {
-            this->netMode = savedMode;
-            Serial.printf("📥 Modo carregado da EEPROM: %d (ESP8266)\n", savedMode);
+            this->netMode = val;
         }
+
+        const char* modeStr = "UNDEFINED";
+        switch (this->netMode) {
+            case 0: modeStr = "ESPNOW"; break;
+            case 1: modeStr = "WIFI"; break;
+            case 2: modeStr = "HYBRID"; break;
+        }
+        Serial.printf("\n📥 Modo de Network: %s\n", modeStr);
     }
-    EEPROM.end();
 #endif
 }
 
 
-void wifiConnManager::setNetMode(int NetMode)
+void wifiConnManager::setNetMode( int NetMode)
 {
-    // Validação opcional (evita salvar valores inválidos)
-    if (NetMode != ESPNOW && NetMode != WIFI && NetMode != HYBRID) {
-        Serial.println("⚠️ Modo de rede inválido.");
-        return;
-    }
-    this->netMode = NetMode;
+        this->netMode = NetMode;
 #ifdef ESP32
-    preferences.putInt("mode", this->netMode);
-    preferences.end();  // só se você não pretende mais usar `preferences`
+        this->preferences.putInt("mode", this->netMode);
+        
+        preferences.end();
 #elif defined(ESP8266)
-    EEPROM.begin(EEPROM_SIZE);  // Garanta que está sendo feito antes em algum ponto
-    EEPROM.write(EEPROM_ADDR_WIFI_MODE, netMode);
-    EEPROM.commit();
+        EEPROM.write(EEPROM_ADDR_WIFI_MODE, netMode);
+        EEPROM.commit();
 #endif
-    Serial.printf("✅ Modo de rede atualizado para %d. Reiniciando...\n", netMode);
-    delay(1000);
-    ESP.restart();
+        Serial.println("✅ Atualização solicitada, reiniciando...");
+        delay(1000);
+        ESP.restart();
 }
 
 
@@ -146,57 +152,39 @@ void wifiConnManager::startWiFi(int NetMode)
 #endif
 
     }
-else if (NetMode == WIFI) 
-{
-    Serial.println("\n🔄 Entrando em modo WI-FI");
-    WiFi.hostname(deviceName);
-
-#ifdef ESP32
-    // No ESP32 faz sentido configurar IP fixo antes do WiFi.begin
-    WiFi.config(localIP, gateway, subnet, dns);
-    Serial.println("\n✅ Iniciando Wifi");
-    WiFi.begin(ssid, wifiPwd);
-    configureWiFiChannel();  // pode ser antes da conexão no ESP32
-
-#elif defined(ESP8266)
-    // No ESP8266, evite chamar WiFi.config() se IP fixo não estiver definido (localIP != 0.0.0.0)
-    if (localIP != IPAddress(0,0,0,0)) {
+    else if (NetMode == WIFI) 
+    {
+        Serial.println("\n🔄 Entrando em modo WI-FI");
+        WiFi.hostname(deviceName);
         WiFi.config(localIP, gateway, subnet, dns);
-    }
-    Serial.println("\n✅ Iniciando Wifi");
-    WiFi.begin(ssid, wifiPwd);
-#endif
-
-    Serial.print("Conectando");
-    unsigned long startAttemptTime = millis();
-    while (WiFi.status() != WL_CONNECTED &&
-           millis() - startAttemptTime < netModeTimeout)
-    {
-        delay(500);
-        Serial.print(".");
-    }
-
-    if (WiFi.status() == WL_CONNECTED)
-    {
-        Serial.println("\n✅ Wi-fi Conectado.");
-
-#ifdef ESP8266
-        // Configure o canal APÓS a conexão no ESP8266
+        Serial.println("\n✅ Iniciando Wifi");
+        WiFi.begin(ssid, wifiPwd);
         configureWiFiChannel();
-#endif
+        Serial.print("Conectando");
+        unsigned long startAttemptTime = millis();
+        while (WiFi.status() != WL_CONNECTED &&
+               millis() - startAttemptTime < netModeTimeout)
+        {
+            delay(500);
+            Serial.print(".");
+        }
 
-        notifyWifiReady();
-        setupOTA();
-    }
-    else
+        if (WiFi.status() == WL_CONNECTED)
+        {
+            Serial.println("\n✅ Wi-fi Conectado.");
+            notifyWifiReady();
+            setupOTA();
+        }
+        else
+        {
+            Serial.println("\n⚠️ Falha ao conectar ao Wi-fi");
+            Serial.println("\nRetornando ao modo ESP-NOW");
+            this->startWiFi(0);
+        }
+        lastActivity = millis();
+    } else if (NetMode == HYBRID) 
     {
-        Serial.println("\n⚠️ Falha ao conectar ao Wi-fi");
-        Serial.println("\nRetornando ao modo ESP-NOW");
-        this->startWiFi(ESPNOW);
-    }
-    lastActivity = millis();
-} else if (NetMode == HYBRID) 
-    {
+        WiFi.mode(WIFI_AP_STA);
         Serial.println("\n✅ Iniciando Wifi");
         WiFi.hostname(deviceName);
         WiFi.config(localIP, gateway, subnet, dns);
@@ -231,6 +219,7 @@ else if (NetMode == WIFI)
         Serial.printf("⚠️ Falha ao iniciar ESP-NOW (código: 0x%X)\n", initStatus);
     }else{
         notifyEspNowReady();
+        setupWebServer();
     }
 
 #elif defined(ESP8266)
@@ -238,13 +227,46 @@ else if (NetMode == WIFI)
         Serial.println("⚠️ Falha ao iniciar ESP-NOW no ESP8266");
     }else{
         notifyEspNowReady();
+        setupWebServer();
     }
 #endif
-
     }
     this->printNetworkInfo();
 }
+void wifiConnManager::setupWebServer() {
+    server.on("/", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        request->send(200, "text/html", generateHtml(this->deviceOtaList));
+    });
 
+    server.on("/updateMode", HTTP_POST, [this](AsyncWebServerRequest *request) {
+        if (!request->hasHeader("X-Device-Name")) {
+            request->send(400, "text/plain", "Faltando header: X-Device-Name");
+            return;
+        }
+
+        String deviceName = request->header("X-Device-Name");
+
+        // Verifica se está na lista permitida
+        auto it = std::find(deviceOtaList.begin(), deviceOtaList.end(), deviceName);
+        if (it == deviceOtaList.end()) {
+            request->send(404, "text/plain", "Dispositivo não autorizado.");
+            return;
+        }
+
+        if (onUpdateModeCallback) {
+            onUpdateModeCallback(deviceName);
+            request->send(200, "text/plain", "Modo UPDATE enviado para " + deviceName);
+        } else {
+            request->send(500, "text/plain", "Callback não configurado.");
+        }
+    });
+
+    server.begin();
+}
+
+void wifiConnManager::onUpdateMode(UpdateModeCallback cb) {
+    onUpdateModeCallback = cb;
+}
 void wifiConnManager::configureWiFiChannel()
 {
     Serial.println("\n✅ Configurando o canal...");
@@ -258,8 +280,7 @@ void wifiConnManager::configureWiFiChannel()
         if (this->currentChannel == CHANNEL_AUTO)
             this->currentChannel = WiFi.channel();
 #elif defined(ESP8266)
-        if (this->currentChannel == CHANNEL_AUTO)
-        this->currentChannel = wifi_get_channel();
+        // ESP8266 não possui WiFi.channel(), manter canal atual
 #endif
     }
 

@@ -21,7 +21,7 @@ enum RouteType
     ROUTE_BOTH
 };
 
-struct Route
+struct RouteEntry
 {
     String source;
     String destination;
@@ -59,6 +59,7 @@ public:
     void publishENow(const String &source, const String &destination, const String &action, const String &message, const uint8_t *realSourceMac = nullptr);
     void handleReconnectMqtt(int timeoutMin);
     void handlePeerVerification(int timeoutMin);
+    void onMqttReconnect(std::function<void()> callback);
 private:
     uint32_t lastActivity;
     AsyncMqttClient mqttClient;
@@ -87,7 +88,10 @@ private:
     const uint8_t* getPeerMacByName(const String& name) const;
     bool isLocalMac(const uint8_t *mac);
     bool isMacValid(const uint8_t* mac);
-    void processPendingRoutes();
+    void processSubscribeRoutes();
+    bool mqttConnected = false;
+    std::function<void()> mqttReconnectCallback;
+    void notifyMqttReconnect();
     struct PendingRoute
     {
         String source;
@@ -96,8 +100,8 @@ private:
         RouteType type; // ROUTE_MQTT, ROUTE_ESPNOW, ROUTE_BOTH
         uint8_t mac[6]; // Se não aplicável (MQTT puro), preencher com 0
     };
-    std::vector<PendingRoute> pendingRoutes;
-    Route routes[MAX_ROUTES];
+    std::vector<PendingRoute> subscribeRoutes;
+    RouteEntry routes[MAX_ROUTES];
     int routeCount = 0;
 };
 
