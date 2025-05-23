@@ -79,7 +79,7 @@ time_t NtpHelper::getEpochTime()
     {
         return 0;
     }
-    return mktime(&timeinfo);
+    return mktime(&timeinfo) - timeZone * 3600;
 #elif defined(ESP8266)
     return timeClient.getEpochTime();
 #endif
