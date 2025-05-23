@@ -14,6 +14,6 @@ const char* MQTT_PWD = "xxx";
 const IPAddress WIFI_GATEWAY(192, 168, 1, xxx);       
 const IPAddress WIFI_SUBNET(255, 255, 255, 0);      
 const IPAddress WIFI_DNS(8, 8, 8, 8);    
-uint8_t WIFI_CHANNEL = CHANNEL_AUTO;     // SET CHANNEL_AUTO PARA AUTODETECÇÃO     
-uint8_t ESP_NOW_CHANNEL = CHANNEL_AUTO; // SET CHANNEL_AUTO PARA AUTODETECÇÃO 
+uint8_t WIFI_CHANNEL = CHANNEL_AUTO;     // SET CHANNEL_AUTO      
+uint8_t ESP_NOW_CHANNEL = CHANNEL_AUTO; // SET CHANNEL_AUTO 
 #endif
