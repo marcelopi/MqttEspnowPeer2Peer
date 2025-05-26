@@ -240,7 +240,7 @@ void EspNowPeer::onReceive(const uint8_t* mac, const uint8_t* data, int len) {
             }
         }
         if (destination == "ALL" && source != instance->localName) {
-            instance->publishENow(source, "ALL", action, message);
+            instance->publishENow(instance->localName, "ALL", action, message);
             Serial.println("Mensagem ALL repassada para o próximo cliente");
         }
     // Se chegou aqui, não encontrou destino local, tenta repassar
