@@ -1,3 +1,4 @@
+#ifdef ESP32
 #include "OtaPage.h"
 
 // Definições (só aparecem UMA vez no projeto)
@@ -73,3 +74,4 @@ String generateHtml(const std::vector<String>& devices) {
   html.replace("%DEVICE_OPTIONS%", optionsName);
   return html;
 }
+#endif

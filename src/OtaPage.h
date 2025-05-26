@@ -1,3 +1,4 @@
+#ifdef ESP32
 #pragma once
 #include <Arduino.h>
 #include <vector>
@@ -12,3 +13,4 @@ extern AsyncWebServer server;
 
 // Protótipo da função
 String generateHtml(const std::vector<String>& devices); 
+#endif

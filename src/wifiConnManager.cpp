@@ -2,8 +2,11 @@
 #include "OtaPage.h"
 
 wifiConnManager *wifiConnManager::instance = nullptr;
-
+#ifdef ESP32
 wifiConnManager::wifiConnManager() : server(80)
+#elif defined(ESP8266)
+wifiConnManager::wifiConnManager()
+#endif
 {
     wifiConnManager::instance = this;
 #ifdef ESP8266
@@ -221,18 +224,17 @@ void wifiConnManager::startWiFi(int NetMode)
         notifyEspNowReady();
         setupWebServer();
     }
-
 #elif defined(ESP8266)
     if (esp_now_init() != 0) {
         Serial.println("⚠️ Falha ao iniciar ESP-NOW no ESP8266");
     }else{
         notifyEspNowReady();
-        setupWebServer();
     }
 #endif
     }
     this->printNetworkInfo();
 }
+#ifdef ESP32
 void wifiConnManager::setupWebServer() {
     server.on("/", HTTP_GET, [this](AsyncWebServerRequest *request) {
         request->send(200, "text/html", generateHtml(this->deviceOtaList));
@@ -263,7 +265,7 @@ void wifiConnManager::setupWebServer() {
 
     server.begin();
 }
-
+#endif
 void wifiConnManager::onUpdateMode(UpdateModeCallback cb) {
     onUpdateModeCallback = cb;
 }

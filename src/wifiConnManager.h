@@ -47,10 +47,14 @@ public:
     void printNetworkInfo();
     void onEspNowReady(std::function<void()> callback);
     void onWifiReady(std::function<void()> callback);
+#ifdef ESP32
     void setupWebServer();
+#endif
     void onUpdateMode(UpdateModeCallback cb);
 private:
+#ifdef ESP32
     AsyncWebServer server;
+#endif
     const char *deviceName;
     const char *ssid;
     const char *wifiPwd;
